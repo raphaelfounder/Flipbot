@@ -11,72 +11,86 @@ import {
   startDurableFacebookProductFinderSearch,
   type ProductFinderInput,
 } from "@/lib/product-finder";
+import { getAuthenticatedUser } from "@/lib/supabase/auth";
+import { withRuntimeUser } from "@/lib/flipbot-runtime";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-export function GET() {
+export async function GET() {
+  const { userId } = await getAuthenticatedUser();
+  if (!userId) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   return NextResponse.json({ configured: getProductFinderConfiguration() });
 }
 
 export async function POST(request: Request) {
-  try {
-    const input = validateInput(await request.json());
-    if (input.source === "Facebook") {
-      const pending = await startDurableFacebookProductFinderSearch(input);
-      return NextResponse.json({ ...pending, searchedAt: new Date().toISOString() }, { status: 202 });
+  const { userId } = await getAuthenticatedUser();
+  if (!userId) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+
+  return withRuntimeUser(userId, async () => {
+    try {
+      const input = validateInput(await request.json());
+      if (input.source === "Facebook") {
+        const pending = await startDurableFacebookProductFinderSearch(input);
+        return NextResponse.json({ ...pending, searchedAt: new Date().toISOString() }, { status: 202 });
+      }
+      const deals = await findProductDeals(input);
+      return NextResponse.json({ deals, source: "live", searchedAt: new Date().toISOString() });
+    } catch (error) {
+      if (error instanceof ProductFinderProviderError) {
+        return NextResponse.json({ error: error.message }, { status: error.status });
+      }
+      console.error("Product Finder failed", error);
+      return NextResponse.json({ error: "Product Finder could not complete this search." }, { status: 500 });
     }
-    const deals = await findProductDeals(input);
-    return NextResponse.json({ deals, source: "live", searchedAt: new Date().toISOString() });
-  } catch (error) {
-    if (error instanceof ProductFinderProviderError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("Product Finder failed", error);
-    return NextResponse.json({ error: "Product Finder could not complete this search." }, { status: 500 });
-  }
+  });
 }
 
 export async function PUT(request: Request) {
-  try {
-    const value = await request.json();
-    if (!value || typeof value !== "object") {
-      throw new ProductFinderProviderError("Invalid search status request.", 400);
-    }
-    const payload = value as Record<string, unknown>;
-    const searchId = typeof payload.searchId === "string" ? payload.searchId.trim() : "";
-    if (searchId) {
-      if (payload.auditRejected === true) {
-        const result = await revealFullSearchAudit(searchId);
-        return NextResponse.json({ ...result, searchedAt: new Date().toISOString() });
+  const { userId } = await getAuthenticatedUser();
+  if (!userId) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+
+  return withRuntimeUser(userId, async () => {
+    try {
+      const value = await request.json();
+      if (!value || typeof value !== "object") {
+        throw new ProductFinderProviderError("Invalid search status request.", 400);
       }
-      if (payload.previewRejected === true) {
-        const result = await revealRejectedShortlist(searchId);
-        return NextResponse.json({ ...result, searchedAt: new Date().toISOString() });
+      const payload = value as Record<string, unknown>;
+      const searchId = typeof payload.searchId === "string" ? payload.searchId.trim() : "";
+      if (searchId) {
+        if (payload.auditRejected === true) {
+          const result = await revealFullSearchAudit(searchId);
+          return NextResponse.json({ ...result, searchedAt: new Date().toISOString() });
+        }
+        if (payload.previewRejected === true) {
+          const result = await revealRejectedShortlist(searchId);
+          return NextResponse.json({ ...result, searchedAt: new Date().toISOString() });
+        }
+        const result = await advanceDurableFacebookProductFinderSearch(searchId);
+        const status = result.status === "pending" ? 202 : result.status === "failed" ? 502 : 200;
+        return NextResponse.json({ ...result, searchedAt: new Date().toISOString() }, { status });
       }
-      const result = await advanceDurableFacebookProductFinderSearch(searchId);
-      const status = result.status === "pending" ? 202 : result.status === "failed" ? 502 : 200;
-      return NextResponse.json({ ...result, searchedAt: new Date().toISOString() }, { status });
-    }
 
-    const snapshotId = typeof payload.snapshotId === "string" ? payload.snapshotId.trim() : "";
-    if (!snapshotId) throw new ProductFinderProviderError("Missing Marketplace search reference.", 400);
+      const snapshotId = typeof payload.snapshotId === "string" ? payload.snapshotId.trim() : "";
+      if (!snapshotId) throw new ProductFinderProviderError("Missing Marketplace search reference.", 400);
 
-    const input = validateInput(payload.input);
-    if (input.source !== "Facebook") throw new ProductFinderProviderError("Search status is only used for Facebook Marketplace.", 400);
+      const input = validateInput(payload.input);
+      if (input.source !== "Facebook") throw new ProductFinderProviderError("Search status is only used for Facebook Marketplace.", 400);
 
-    const deals = await finishFacebookProductFinderSearch(input, snapshotId);
-    if (!deals) {
-      return NextResponse.json({ status: "pending", snapshotId, searchedAt: new Date().toISOString() }, { status: 202 });
+      const deals = await finishFacebookProductFinderSearch(input, snapshotId);
+      if (!deals) {
+        return NextResponse.json({ status: "pending", snapshotId, searchedAt: new Date().toISOString() }, { status: 202 });
+      }
+      return NextResponse.json({ status: "complete", deals, source: "live", searchedAt: new Date().toISOString() });
+    } catch (error) {
+      if (error instanceof ProductFinderProviderError) {
+        return NextResponse.json({ error: error.message }, { status: error.status });
+      }
+      console.error("Product Finder status failed", error);
+      return NextResponse.json({ error: "Product Finder could not complete this search." }, { status: 500 });
     }
-    return NextResponse.json({ status: "complete", deals, source: "live", searchedAt: new Date().toISOString() });
-  } catch (error) {
-    if (error instanceof ProductFinderProviderError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("Product Finder status failed", error);
-    return NextResponse.json({ error: "Product Finder could not complete this search." }, { status: 500 });
-  }
+  });
 }
 
 function validateInput(value: unknown): ProductFinderInput {
