@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   Bookmark,
@@ -42,7 +43,17 @@ import {
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  deleteAccountAction,
+  signOutAction,
+  signOutOtherSessionsAction,
+  updatePasswordAction,
+  updateProfileAction,
+  updateSettingsAction,
+} from "@/app/app/actions";
+import { measurePasswordStrength, validatePassword } from "@/lib/auth/password-policy";
+import { validateUsername } from "@/lib/auth/username-policy";
 import {
   appDeals,
   appUser,
@@ -117,7 +128,7 @@ type ListingDraft = {
   image: string;
 };
 
-type UserSettings = {
+export type UserSettings = {
   currency: string;
   region: string;
   defaultMarketplace: "Facebook" | "eBay";
@@ -132,7 +143,7 @@ type UserSettings = {
   density: "Comfortable" | "Compact";
 };
 
-type AccountProfile = {
+export type AccountProfile = {
   name: string;
   username: string;
   email: string;
@@ -142,6 +153,7 @@ type AccountProfile = {
   emailVerified: boolean;
   phoneVerified: boolean;
   memberSince: string;
+  plan: string;
 };
 
 type ScannerResult = {
@@ -245,7 +257,7 @@ const initialCrmDeals: CrmDeal[] = crmColumns.flatMap((column) =>
   })),
 );
 
-const initialSettings: UserSettings = {
+export const defaultUserSettings: UserSettings = {
   currency: "GBP",
   region: "United Kingdom",
   defaultMarketplace: "Facebook",
@@ -258,18 +270,6 @@ const initialSettings: UserSettings = {
   compactCards: false,
   reducedMotion: false,
   density: "Comfortable",
-};
-
-const initialAccountProfile: AccountProfile = {
-  name: appUser.name,
-  username: "oliverflips",
-  email: appUser.email,
-  phone: "",
-  location: "Brighton, United Kingdom",
-  bio: "Finding stronger resale opportunities with Flipbot.",
-  emailVerified: true,
-  phoneVerified: false,
-  memberSince: "August 2026",
 };
 
 const crmStages: CrmStage[] = ["Watching", "Contacted", "Negotiating", "Purchased", "Listed", "Sold", "Passed"];
@@ -308,7 +308,7 @@ function getDealUrl(deal: AppDeal) {
   return `https://www.ebay.co.uk/sch/i.html?_nkw=${encodeURIComponent(deal.title)}`;
 }
 
-export function FlipbotSoftwareApp() {
+export function FlipbotSoftwareApp({ initialProfile, initialUserSettings }: { initialProfile: AccountProfile; initialUserSettings: UserSettings }) {
   const [activePage, setActivePage] = useState<PageId>("home");
   const [helpTopic, setHelpTopic] = useState<HelpTopicId | null>(null);
   const [lightMode, setLightMode] = useState(false);
@@ -324,8 +324,8 @@ export function FlipbotSoftwareApp() {
   });
   const [tasksState, setTasksState] = useState<AppTask[]>(initialTasks);
   const [crmDeals, setCrmDeals] = useState<CrmDeal[]>(initialCrmDeals);
-  const [settings, setSettings] = useState<UserSettings>(initialSettings);
-  const [accountProfile, setAccountProfile] = useState<AccountProfile>(initialAccountProfile);
+  const [settings, setSettings] = useState<UserSettings>(initialUserSettings);
+  const [accountProfile, setAccountProfile] = useState<AccountProfile>(initialProfile);
   const [drafts, setDrafts] = useState<ListingDraft[]>([
     {
       id: "draft-sony",
@@ -1623,53 +1623,52 @@ function AutoListerPage({ drafts, setDrafts, onToast }: { drafts: ListingDraft[]
 }
 
 function AccountPage({ profile, setProfile, settings, onToast, onPageChange }: { profile: AccountProfile; setProfile: React.Dispatch<React.SetStateAction<AccountProfile>>; settings: UserSettings; onToast: (title: string, detail?: string) => void; onPageChange: (id: PageId) => void }) {
+  const router = useRouter();
   const [section, setSection] = useState<"profile" | "security" | "connections" | "billing">("profile");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(profile);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const [phoneOpen, setPhoneOpen] = useState(false);
-  const [phoneStep, setPhoneStep] = useState<"number" | "verify">("number");
-  const [phoneDraft, setPhoneDraft] = useState(profile.phone);
-  const [phoneCode, setPhoneCode] = useState("");
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
+  const [deletion, setDeletion] = useState({ password: "", confirmation: "" });
+  const [isPending, startTransition] = useTransition();
+  const nextPasswordStrength = measurePasswordStrength(passwords.next, [profile.name, profile.username, profile.email.split("@")[0] || ""]);
 
   function saveProfile() {
     if (!draft.name.trim()) return setProfileError("Enter your name.");
-    if (!/^[a-zA-Z0-9_]{3,24}$/.test(draft.username)) return setProfileError("Username must be 3–24 characters using letters, numbers or underscores.");
+    const usernameError = validateUsername(draft.username.toLowerCase());
+    if (usernameError) return setProfileError(usernameError);
     if (!/^\S+@\S+\.\S+$/.test(draft.email)) return setProfileError("Enter a valid email address.");
-    setProfile({ ...draft, name: draft.name.trim(), username: draft.username.toLowerCase(), emailVerified: draft.email === profile.email ? profile.emailVerified : false });
-    setProfileError(null);
-    setEditing(false);
-    onToast("Profile saved", "Your account details were updated.");
-  }
-
-  function startPhoneVerification() {
-    if (!/^\+?[0-9\s()-]{8,20}$/.test(phoneDraft.trim())) {
-      onToast("Check the phone number", "Include a valid mobile number and country code.");
-      return;
-    }
-    setPhoneStep("verify");
-    onToast("Verification code sent", "For this dashboard prototype, use 123456.");
-  }
-
-  function verifyPhone() {
-    if (phoneCode !== "123456") {
-      onToast("Incorrect code", "Check the code and try again.");
-      return;
-    }
-    setProfile((current) => ({ ...current, phone: phoneDraft.trim(), phoneVerified: true }));
-    setPhoneOpen(false);
-    setPhoneStep("number");
-    setPhoneCode("");
-    onToast("Phone connected", "Your mobile number is now verified.");
+    startTransition(async () => {
+      const result = await updateProfileAction(draft);
+      if (!result.ok) return setProfileError(result.message);
+      setProfile({ ...draft, name: draft.name.trim(), username: draft.username.toLowerCase(), emailVerified: draft.email === profile.email ? profile.emailVerified : false });
+      setProfileError(null);
+      setEditing(false);
+      onToast("Profile saved", result.message);
+    });
   }
 
   function updatePassword() {
     if (!passwords.current) return onToast("Enter your current password", "Your existing password is required.");
-    if (passwords.next.length < 8) return onToast("Password is too short", "Use at least 8 characters.");
+    const passwordError = validatePassword(passwords.next, [profile.name, profile.username, profile.email.split("@")[0] || ""]);
+    if (passwordError) return onToast("Choose a stronger password", passwordError);
     if (passwords.next !== passwords.confirm) return onToast("Passwords do not match", "Re-enter the new password.");
-    setPasswords({ current: "", next: "", confirm: "" });
-    onToast("Password updated", "Your other sessions will remain active in this prototype.");
+    startTransition(async () => {
+      const result = await updatePasswordAction(passwords.current, passwords.next);
+      if (result.ok) setPasswords({ current: "", next: "", confirm: "" });
+      onToast(result.ok ? "Password updated" : "Password not updated", result.message);
+    });
+  }
+
+  function deleteAccount() {
+    if (!deletion.password) return onToast("Current password required", "Enter your password before deleting the account.");
+    if (deletion.confirmation !== "DELETE") return onToast("Confirmation required", "Type DELETE exactly to continue.");
+    startTransition(async () => {
+      const result = await deleteAccountAction(deletion.password, deletion.confirmation);
+      if (!result.ok) return onToast("Account not deleted", result.message);
+      router.push("/auth/sign-in?message=Your+Flipbot+account+was+deleted.");
+      router.refresh();
+    });
   }
 
   const tabs = [
@@ -1686,7 +1685,7 @@ function AccountPage({ profile, setProfile, settings, onToast, onPageChange }: {
         <div className="relative border-b border-white/[0.07] bg-[radial-gradient(circle_at_10%_0%,rgba(36,107,253,.22),transparent_28rem)] p-5 sm:p-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <div className="grid h-20 w-20 shrink-0 place-items-center rounded-[26px] border border-blue-300/20 bg-blue-500/15 text-3xl font-semibold text-blue-100 shadow-[0_0_35px_rgba(36,107,253,.18)]">{profile.name.slice(0, 1).toUpperCase()}</div>
-            <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-2xl font-semibold">{profile.name}</h2><Badge tone="blue">{appUser.plan}</Badge></div><p className="mt-1 text-sm text-blue-200">@{profile.username}</p><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{profile.bio}</p><p className="mt-2 text-xs text-slate-500">Member since {profile.memberSince}</p></div>
+            <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-2xl font-semibold">{profile.name}</h2><Badge tone="blue">{profile.plan}</Badge></div><p className="mt-1 text-sm text-blue-200">@{profile.username}</p><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{profile.bio}</p><p className="mt-2 text-xs text-slate-500">Member since {profile.memberSince}</p></div>
             <GhostButton onClick={() => { setSection("profile"); setDraft(profile); setEditing(true); }}>Edit profile</GhostButton>
           </div>
         </div>
@@ -1700,13 +1699,13 @@ function AccountPage({ profile, setProfile, settings, onToast, onPageChange }: {
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label><FieldLabel>Display name</FieldLabel><Input value={draft.name} onChange={(name) => setDraft({ ...draft, name })} placeholder="Your name" /></label>
-                  <label><FieldLabel>Username</FieldLabel><div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">@</span><input value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value.replace(/[^a-zA-Z0-9_]/g, "") })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] pl-8 pr-3 text-sm outline-none focus:border-blue-200/40" /></div></label>
+                  <label><FieldLabel>Username</FieldLabel><div className="relative"><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">@</span><input value={draft.username} minLength={3} maxLength={24} pattern="[a-z0-9][a-z0-9_]{1,22}[a-z0-9]" onChange={(event) => setDraft({ ...draft, username: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] pl-8 pr-3 text-base outline-none focus:border-blue-200/40" /></div><span className="mt-1.5 block text-xs text-slate-500">3–24 lowercase letters, numbers or single underscores.</span></label>
                   <label><FieldLabel>Email address</FieldLabel><Input value={draft.email} onChange={(email) => setDraft({ ...draft, email })} placeholder="you@example.com" /></label>
                   <label><FieldLabel>Location</FieldLabel><Input value={draft.location} onChange={(location) => setDraft({ ...draft, location })} placeholder="Brighton, United Kingdom" /></label>
                 </div>
                 <label><FieldLabel>About you</FieldLabel><textarea value={draft.bio} maxLength={160} onChange={(event) => setDraft({ ...draft, bio: event.target.value })} className="min-h-24 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] p-3 text-sm outline-none focus:border-blue-200/40" /><p className="mt-1 text-right text-xs text-slate-500">{draft.bio.length} / 160</p></label>
                 {profileError ? <p className="rounded-xl border border-red-300/20 bg-red-400/[0.07] p-3 text-sm text-red-200">{profileError}</p> : null}
-                <div className="flex justify-end gap-2"><GhostButton onClick={() => { setDraft(profile); setProfileError(null); setEditing(false); }}>Cancel</GhostButton><GlowButton onClick={saveProfile}>Save changes</GlowButton></div>
+                <div className="flex justify-end gap-2"><GhostButton onClick={() => { setDraft(profile); setProfileError(null); setEditing(false); }}>Cancel</GhostButton><GlowButton onClick={saveProfile}>{isPending ? "Saving…" : "Save changes"}</GlowButton></div>
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2"><InputPreview label="Display name" value={profile.name} /><InputPreview label="Username" value={`@${profile.username}`} /><InputPreview label="Email" value={profile.email} /><InputPreview label="Location" value={profile.location} /><InputPreview label="Currency" value={settings.currency} /><InputPreview label="Region" value={settings.region} /></div>
@@ -1714,10 +1713,10 @@ function AccountPage({ profile, setProfile, settings, onToast, onPageChange }: {
           </Panel>
           <div className="space-y-5">
             <Panel title="Contact details">
-              <AccountContactRow icon={Mail} label="Email" value={profile.email} verified={profile.emailVerified} action={profile.emailVerified ? undefined : "Verify"} onAction={() => { setProfile((current) => ({ ...current, emailVerified: true })); onToast("Email verified", "Your email is now marked as verified in this prototype."); }} />
+              <AccountContactRow icon={Mail} label="Email" value={profile.email} verified={profile.emailVerified} action={profile.emailVerified ? undefined : "How to verify"} onAction={() => onToast("Email confirmation required", "Open the confirmation link sent to your email address.")} />
               <div className="my-4 h-px bg-white/[0.07]" />
-              <AccountContactRow icon={Phone} label="Mobile" value={profile.phone || "Not connected"} verified={profile.phoneVerified} action={profile.phone ? "Change" : "Connect"} onAction={() => { setPhoneDraft(profile.phone); setPhoneStep("number"); setPhoneCode(""); setPhoneOpen(true); }} />
-              {profile.phone ? <button onClick={() => { setProfile((current) => ({ ...current, phone: "", phoneVerified: false })); onToast("Phone removed", "Your mobile number was disconnected."); }} className="mt-4 text-xs font-semibold text-slate-500 hover:text-red-200">Remove mobile number</button> : null}
+              <AccountContactRow icon={Phone} label="Mobile" value={profile.phone || "Not connected"} verified={profile.phoneVerified} action={undefined} onAction={() => undefined} />
+              <p className="mt-4 text-xs leading-5 text-slate-500">Phone sign-in and SMS verification are not enabled for the initial launch.</p>
             </Panel>
             <Panel title="Sourcing defaults"><p className="text-sm text-slate-400">{settings.defaultMarketplace} · {settings.defaultDistance} mile radius · £{settings.minProfit}+ minimum profit</p><GhostButton className="mt-4" onClick={() => onPageChange("settings")}>Edit preferences</GhostButton></Panel>
           </div>
@@ -1726,10 +1725,12 @@ function AccountPage({ profile, setProfile, settings, onToast, onPageChange }: {
 
       {section === "security" ? (
         <div className="grid gap-5 xl:grid-cols-2">
-          <Panel title="Change password"><div className="space-y-3"><label><FieldLabel>Current password</FieldLabel><input type="password" value={passwords.current} onChange={(event) => setPasswords({ ...passwords, current: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-sm outline-none focus:border-blue-200/40" /></label><label><FieldLabel>New password</FieldLabel><input type="password" value={passwords.next} onChange={(event) => setPasswords({ ...passwords, next: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-sm outline-none focus:border-blue-200/40" /></label><label><FieldLabel>Confirm new password</FieldLabel><input type="password" value={passwords.confirm} onChange={(event) => setPasswords({ ...passwords, confirm: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-sm outline-none focus:border-blue-200/40" /></label><GlowButton onClick={updatePassword}>Update password</GlowButton></div></Panel>
-          <Panel title="Account protection"><div className="space-y-4"><SecurityStatus title="Email verified" copy={profile.email} complete={profile.emailVerified} /><SecurityStatus title="Mobile connected" copy={profile.phone || "Add a recovery and verification number."} complete={profile.phoneVerified} /><SecurityStatus title="Two-step verification" copy="Available when production authentication is connected." complete={false} /></div></Panel>
-          <Panel title="Active session"><div className="flex items-start justify-between gap-4"><div><p className="font-semibold">This browser</p><p className="mt-1 text-sm text-slate-400">Windows · United Kingdom · Active now</p></div><Badge tone="teal">Current</Badge></div><GhostButton className="mt-5" onClick={() => onToast("Other sessions signed out", "Only this browser remains active in the prototype.")}>Sign out other sessions</GhostButton></Panel>
-          <Panel title="Sign out"><p className="text-sm leading-6 text-slate-400">Sign out when you are finished on a shared device.</p><GhostButton className="mt-4" onClick={() => onToast("Signed out", "Authentication is not connected, so this prototype remains open.")}><LogOut className="mr-2 inline h-4 w-4" />Sign out</GhostButton></Panel>
+          <Panel title="Change password"><div className="space-y-3"><label><FieldLabel>Current password</FieldLabel><input type="password" autoComplete="current-password" value={passwords.current} onChange={(event) => setPasswords({ ...passwords, current: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-base outline-none focus:border-blue-200/40" /></label><label><FieldLabel>New password</FieldLabel><input type="password" autoComplete="new-password" minLength={8} maxLength={128} value={passwords.next} onChange={(event) => setPasswords({ ...passwords, next: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-base outline-none focus:border-blue-200/40" /><div className="mt-2 grid grid-cols-4 gap-1.5" aria-hidden="true">{[1, 2, 3, 4].map((level) => <span key={level} className={cn("h-1 rounded-full", passwords.next && nextPasswordStrength.score >= level ? "bg-blue-400" : "bg-white/[0.08]")} />)}</div><p className="mt-1.5 text-xs leading-5 text-slate-500" aria-live="polite">{passwords.next ? `${nextPasswordStrength.label}. ${nextPasswordStrength.suggestions[0] || "This password meets the standard."}` : "At least 8 characters. Spaces and memorable passphrases are allowed."}</p></label><label><FieldLabel>Confirm new password</FieldLabel><input type="password" autoComplete="new-password" minLength={8} maxLength={128} value={passwords.confirm} onChange={(event) => setPasswords({ ...passwords, confirm: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-base outline-none focus:border-blue-200/40" /></label><GlowButton onClick={updatePassword}>{isPending ? "Updating…" : "Update password"}</GlowButton></div></Panel>
+          <Panel title="Account protection"><div className="space-y-4"><SecurityStatus title="Email verified" copy={profile.email} complete={profile.emailVerified} /><SecurityStatus title="Mobile connected" copy={profile.phone || "Phone verification is not enabled."} complete={profile.phoneVerified} /></div></Panel>
+          <Panel title="Active session"><div className="flex items-start justify-between gap-4"><div><p className="font-semibold">This browser</p><p className="mt-1 text-sm text-slate-400">Authenticated with Supabase · Active now</p></div><Badge tone="teal">Current</Badge></div><GhostButton className="mt-5" onClick={() => startTransition(async () => { const result = await signOutOtherSessionsAction(); onToast(result.ok ? "Other sessions signed out" : "Could not sign out sessions", result.message); })}>Sign out other sessions</GhostButton></Panel>
+          <Panel title="Sign out"><p className="text-sm leading-6 text-slate-400">Sign out when you are finished on a shared device.</p><GhostButton className="mt-4" onClick={() => startTransition(async () => signOutAction())}><LogOut className="mr-2 inline h-4 w-4" />Sign out</GhostButton></Panel>
+          <Panel title="Your data"><p className="text-sm leading-6 text-slate-400">Download a JSON copy of your account, profile, preferences and saved Product Finder records.</p><a href="/api/account/export" className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 text-sm font-semibold text-slate-200 hover:bg-white/[0.06]">Download my data</a></Panel>
+          <Panel title="Delete account" className="border-red-300/15"><p className="text-sm leading-6 text-slate-400">Permanently delete your account, profile, preferences, searches and saved search results. This cannot be undone.</p><div className="mt-4 space-y-3"><label><FieldLabel>Current password</FieldLabel><input type="password" autoComplete="current-password" value={deletion.password} onChange={(event) => setDeletion({ ...deletion, password: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-base outline-none focus:border-red-200/40" /></label><label><FieldLabel>Type DELETE to confirm</FieldLabel><input value={deletion.confirmation} onChange={(event) => setDeletion({ ...deletion, confirmation: event.target.value })} className="min-h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 text-base outline-none focus:border-red-200/40" /></label><button type="button" disabled={isPending || deletion.confirmation !== "DELETE" || !deletion.password} onClick={deleteAccount} className="inline-flex min-h-11 items-center rounded-xl border border-red-300/25 bg-red-500/10 px-4 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"><Trash2 className="mr-2 h-4 w-4" />{isPending ? "Deleting…" : "Delete account permanently"}</button></div></Panel>
         </div>
       ) : null}
 
@@ -1743,18 +1744,13 @@ function AccountPage({ profile, setProfile, settings, onToast, onPageChange }: {
 
       {section === "billing" ? (
         <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
-          <Panel title="Current plan"><div className="flex flex-col gap-4 rounded-2xl border border-blue-300/20 bg-blue-500/[0.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><Badge tone="blue">Current plan</Badge><p className="mt-3 text-2xl font-semibold">Pro</p><p className="mt-1 text-sm text-slate-400">£79.99 per month · Renews 1 September</p></div><GhostButton onClick={() => onToast("Billing portal pending", "Connect Stripe to manage the live subscription.")}>Manage subscription</GhostButton></div><div className="mt-5 grid grid-cols-3 gap-2">{[["Starter", "£19.99"], ["Plus", "£49.99"], ["Pro", "£79.99"]].map(([plan, price]) => <div key={plan} className={cn("rounded-2xl border p-3", plan === "Pro" ? "border-blue-300/25 bg-blue-500/10" : "border-white/[0.07] bg-white/[0.02]")}><p className="text-sm font-semibold">{plan}</p><p className="mt-1 text-lg font-semibold">{price}</p><p className="text-xs text-slate-500">per month</p></div>)}</div><p className="mt-4 text-xs leading-5 text-slate-500">Plan allowances and the billing portal must be confirmed against the live Stripe configuration before launch.</p></Panel>
+          <Panel title="Current plan"><div className="flex flex-col gap-4 rounded-2xl border border-blue-300/20 bg-blue-500/[0.08] p-5 sm:flex-row sm:items-center sm:justify-between"><div><Badge tone="blue">Current plan</Badge><p className="mt-3 text-2xl font-semibold">{profile.plan}</p><p className="mt-1 text-sm text-slate-400">Your account plan is stored separately from editable profile details.</p></div><GhostButton onClick={() => onToast("Billing portal pending", "Connect Stripe before enabling subscription changes.")}>Manage subscription</GhostButton></div><p className="mt-4 text-xs leading-5 text-slate-500">Pricing, renewals and allowances will be enabled when the live Stripe configuration is connected.</p></Panel>
           <Panel title="Current usage"><UsageBars /><p className="mt-4 text-xs text-slate-500">Usage resets {appUser.resetDate}.</p></Panel>
           <Panel title="Credits"><p className="text-sm leading-7 text-slate-400">A standard Product Finder search uses 10 credits. Enabling the eligible CEX check adds 5 credits. Credits are a service allowance, not cash.</p><GhostButton className="mt-4" onClick={() => onPageChange("subscriptions")}>Credits & cancellation terms</GhostButton></Panel>
           <Panel title="Billing help"><p className="text-sm leading-7 text-slate-400">For a billing problem, include your account email, date and a short description. Never send your password or full card number.</p><GhostButton className="mt-4" onClick={() => onPageChange("help")}>Visit Help centre</GhostButton></Panel>
         </div>
       ) : null}
 
-      {phoneOpen ? (
-        <Modal title={phoneStep === "number" ? "Connect mobile number" : "Verify your number"} onClose={() => setPhoneOpen(false)}>
-          {phoneStep === "number" ? <div className="space-y-4"><p className="text-sm leading-6 text-slate-400">Add a mobile number for account recovery and future security checks. Include the country code.</p><label><FieldLabel>Mobile number</FieldLabel><Input value={phoneDraft} onChange={setPhoneDraft} placeholder="+44 7700 900000" /></label><div className="flex justify-end gap-2"><GhostButton onClick={() => setPhoneOpen(false)}>Cancel</GhostButton><GlowButton onClick={startPhoneVerification}>Send code</GlowButton></div></div> : <div className="space-y-4"><p className="text-sm leading-6 text-slate-400">Enter the six-digit code sent to {phoneDraft}. For this prototype, use <strong className="text-white">123456</strong>.</p><label><FieldLabel>Verification code</FieldLabel><Input value={phoneCode} onChange={(value) => setPhoneCode(value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" /></label><div className="flex justify-end gap-2"><GhostButton onClick={() => setPhoneStep("number")}>Back</GhostButton><GlowButton onClick={verifyPhone}>Verify number</GlowButton></div></div>}
-        </Modal>
-      ) : null}
     </div>
   );
 }
@@ -1769,9 +1765,19 @@ function SecurityStatus({ title, copy, complete }: { title: string; copy: string
 
 function SettingsPage({ settings, setSettings, onToast, onPageChange }: { settings: UserSettings; setSettings: React.Dispatch<React.SetStateAction<UserSettings>>; onToast: (title: string, detail?: string) => void; onPageChange: (id: PageId) => void }) {
   const [draft, setDraft] = useState(settings);
+  const [isPending, startTransition] = useTransition();
+
+  function saveSettings() {
+    startTransition(async () => {
+      const result = await updateSettingsAction(draft);
+      if (result.ok) setSettings(draft);
+      onToast(result.ok ? "Settings saved" : "Settings not saved", result.message);
+    });
+  }
+
   return (
     <div className="space-y-5">
-      <PageHeader title="Settings" copy="Configure sourcing defaults, notifications and display preferences." action="Save settings" onAction={() => { setSettings(draft); onToast("Settings saved", "Your app preferences were updated."); }} />
+      <PageHeader title="Settings" copy="Configure sourcing defaults, notifications and display preferences." action={isPending ? "Saving…" : "Save settings"} onAction={saveSettings} />
       <div className="grid gap-5 xl:grid-cols-2">
         <Panel title="General">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -1796,8 +1802,8 @@ function SettingsPage({ settings, setSettings, onToast, onPageChange }: { settin
         </Panel>
         <Panel title="Security">
           <div className="space-y-4 text-sm leading-6 text-slate-400">
-            <div className="flex gap-3"><LockKeyhole className="mt-0.5 h-5 w-5 shrink-0 text-blue-200" /><p>Keep your sign-in details private and use a unique password. Password and active-session controls will appear here when authentication is connected.</p></div>
-            <GhostButton onClick={() => onToast("Security controls pending", "Connect authentication to manage passwords and active sessions.")}>Manage sign-in security</GhostButton>
+            <div className="flex gap-3"><LockKeyhole className="mt-0.5 h-5 w-5 shrink-0 text-blue-200" /><p>Your password and active sessions are protected by Supabase Auth.</p></div>
+            <GhostButton onClick={() => { onPageChange("account"); onToast("Open Account → Security", "Password and session controls are available in your account."); }}>Manage sign-in security</GhostButton>
           </div>
         </Panel>
         <Panel title="Privacy & legal">
@@ -1810,13 +1816,13 @@ function SettingsPage({ settings, setSettings, onToast, onPageChange }: { settin
           </div>
         </Panel>
         <Panel title="Your data & account">
-          <p className="text-sm leading-6 text-slate-400">Data access, correction and deletion requests will use the support route once the final contact destination is connected.</p>
-          <div className="mt-4 flex flex-wrap gap-2"><GhostButton onClick={() => onToast("Support link needed", "Connect the privacy request destination before launch.")}>Request my data</GhostButton><GhostButton onClick={() => onToast("Account deletion not connected", "Add the verified deletion flow before launch.")}>Delete account</GhostButton></div>
+          <p className="text-sm leading-6 text-slate-400">Download your Flipbot records or open Account → Security to permanently delete your account.</p>
+          <div className="mt-4 flex flex-wrap gap-2"><a href="/api/account/export" className="inline-flex min-h-11 items-center rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 text-sm font-semibold text-slate-200 hover:bg-white/[0.06]">Download my data</a><GhostButton onClick={() => { onPageChange("account"); onToast("Open Account → Security", "Account deletion is protected by your current password."); }}>Delete account</GhostButton></div>
         </Panel>
       </div>
       <div className="flex justify-end gap-2">
-        <GhostButton onClick={() => setDraft(initialSettings)}>Reset defaults</GhostButton>
-        <GlowButton onClick={() => { setSettings(draft); onToast("Settings saved", "Your app preferences were updated."); }}>Save settings</GlowButton>
+        <GhostButton onClick={() => setDraft(defaultUserSettings)}>Reset defaults</GhostButton>
+        <GlowButton onClick={saveSettings}>{isPending ? "Saving…" : "Save settings"}</GlowButton>
       </div>
     </div>
   );

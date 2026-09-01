@@ -22,16 +22,14 @@ export type AppDeal = {
 };
 
 export const appUser = {
-  name: "Oliver",
-  email: "oliver@flipbot.local",
-  plan: "Pro Plan",
-  tokensUsed: 2760,
+  plan: "Starter",
+  tokensUsed: 0,
   tokensLimit: 10000,
-  scansUsed: 18,
+  scansUsed: 0,
   scansLimit: 50,
-  searchesUsed: 164,
+  searchesUsed: 0,
   searchesLimit: 400,
-  resetDate: "1 September",
+  resetDate: "monthly",
 };
 
 export const appDeals: AppDeal[] = [

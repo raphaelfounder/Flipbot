@@ -79,20 +79,20 @@ const videos = [
 const pricingPlans = [
   {
     name: "Starter",
-    price: "£19.99",
+    price: "Coming soon",
     positioning: "For getting started.",
     features: ["Deal finding", "Flip Score", "Resale valuations", "Demand analysis", "Deal history", "Scanner access using credits"],
   },
   {
     name: "Plus",
-    price: "£49.99",
+    price: "Coming soon",
     positioning: "For active resellers.",
     popular: true,
     features: ["Everything in Starter", "More monthly usage", "Plus Discord access", "Priority-processing entitlement", "Enhanced saved/history functionality", "Selected early features when enabled"],
   },
   {
     name: "Pro",
-    price: "£79.99",
+    price: "Coming soon",
     positioning: "For serious sourcing.",
     features: ["Everything in Plus", "Pro Discord access", "Highest priority entitlement", "Advanced history and limits", "Beta/priority features where enabled", "High-volume sourcing workflow"],
   },
@@ -432,14 +432,14 @@ function Community() {
 function Pricing() {
   return (
     <section id="pricing" className="relative z-10 px-4 py-20 md:py-32">
-      <SectionHeader eyebrow="Pricing" title="Membership tiers" copy="Start with the plan that matches your sourcing volume. Final usage allowances can be inserted into these cards when confirmed." />
+      <SectionHeader eyebrow="Pricing" title="Membership tiers" copy="Plans and pricing are being finalised. No paid subscription is currently available." />
       <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-3">
         {pricingPlans.map((plan) => (
           <SpotlightCard key={plan.name} className={cn("p-6", plan.popular && "border-blue-200/25 shadow-[0_0_90px_rgba(36,107,253,.18)]")}>
             {plan.popular && <ProfitBadge>Most Popular</ProfitBadge>}
             <h3 className="mt-5 text-2xl font-semibold">{plan.name}</h3>
             <p className="mt-2 text-sm text-slate-400">{plan.positioning}</p>
-            <p className="mt-8 text-4xl font-semibold">{plan.price}<span className="text-base font-normal text-slate-500">/month</span></p>
+            <p className="mt-8 text-4xl font-semibold">{plan.price}</p>
             <div className="mt-8 space-y-3">
               {plan.features.map((feature) => (
                 <p key={feature} className="flex items-center gap-2 text-sm text-slate-300">
@@ -448,7 +448,7 @@ function Pricing() {
                 </p>
               ))}
             </div>
-            <MagneticButton className="mt-8 w-full" href="#">Start Free Trial</MagneticButton>
+            <MagneticButton className="mt-8 w-full" href="mailto:team@flipbot.me?subject=Flipbot%20launch%20updates">Get launch updates</MagneticButton>
           </SpotlightCard>
         ))}
       </div>

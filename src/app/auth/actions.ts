@@ -1,0 +1,134 @@
+"use server";
+
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { validatePasswordSecurely } from "@/lib/auth/password-security";
+import { validateUsername } from "@/lib/auth/username-policy";
+import { createClient } from "@/lib/supabase/server";
+
+function value(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "").trim();
+}
+
+function rawValue(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "");
+}
+
+function captchaToken(formData: FormData, path: string) {
+  const token = rawValue(formData, "cf-turnstile-response");
+  if (!token) authRedirect(path, "Complete the bot-protection check and try again.");
+  return token;
+}
+
+function authRedirect(path: string, message: string): never {
+  redirect(`${path}?message=${encodeURIComponent(message)}`);
+}
+
+async function siteOrigin() {
+  const requestHeaders = await headers();
+  return process.env.NEXT_PUBLIC_SITE_URL || requestHeaders.get("origin") || "http://localhost:3000";
+}
+
+export async function signIn(formData: FormData) {
+  const email = value(formData, "email").toLowerCase();
+  const password = rawValue(formData, "password");
+  if (!email || !password) authRedirect("/auth/sign-in", "Enter your email and password.");
+  const token = captchaToken(formData, "/auth/sign-in");
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: token } });
+  if (error?.code === "email_not_confirmed") {
+    authRedirect("/auth/sign-in", "Confirm your email before signing in. If the message did not arrive, request a new one below.");
+  }
+  if (error) authRedirect("/auth/sign-in", "The email or password was not recognised.");
+  redirect("/app");
+}
+
+export async function signUp(formData: FormData) {
+  const fullName = value(formData, "fullName");
+  const username = value(formData, "username").toLowerCase();
+  const email = value(formData, "email").toLowerCase();
+  const password = rawValue(formData, "password");
+  const confirmPassword = rawValue(formData, "confirmPassword");
+  const acceptedTerms = formData.get("acceptedTerms") === "on";
+  const token = captchaToken(formData, "/auth/sign-up");
+
+  if (!acceptedTerms) authRedirect("/auth/sign-up", "Confirm that you are at least 18 and agree to the Terms and Privacy Policy.");
+  if (fullName.length < 2) authRedirect("/auth/sign-up", "Enter your full name.");
+  const usernameError = validateUsername(username);
+  if (usernameError) authRedirect("/auth/sign-up", usernameError);
+  if (!/^\S+@\S+\.\S+$/.test(email)) authRedirect("/auth/sign-up", "Enter a valid email address.");
+  if (password !== confirmPassword) authRedirect("/auth/sign-up", "The passwords do not match.");
+  const passwordError = await validatePasswordSecurely(password, [fullName, username, email.split("@")[0] || ""]);
+  if (passwordError) authRedirect("/auth/sign-up", passwordError);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${await siteOrigin()}/auth/callback?next=/app&verified=1`,
+      data: { full_name: fullName, username },
+      captchaToken: token,
+    },
+  });
+
+  if (error) authRedirect("/auth/sign-up", error.message);
+  if (data.session) redirect("/app");
+  authRedirect("/auth/sign-in", "Check your email to confirm your account, then sign in.");
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const email = value(formData, "email").toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) authRedirect("/auth/forgot-password", "Enter the email address for your account.");
+  const token = captchaToken(formData, "/auth/forgot-password");
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${await siteOrigin()}/auth/callback?next=/auth/reset-password`,
+    captchaToken: token,
+  });
+  if (error) authRedirect("/auth/forgot-password", error.message);
+  authRedirect("/auth/sign-in", "If that email has a Flipbot account, a reset link is on its way.");
+}
+
+export async function resendConfirmation(formData: FormData) {
+  const email = value(formData, "email").toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    authRedirect("/auth/resend-confirmation", "Enter the email address you used to create your account.");
+  }
+  const token = captchaToken(formData, "/auth/resend-confirmation");
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${await siteOrigin()}/auth/callback?next=/app&verified=1`,
+      captchaToken: token,
+    },
+  });
+
+  if (error?.code === "over_email_send_rate_limit") {
+    authRedirect("/auth/resend-confirmation", "Please wait a minute before requesting another confirmation email.");
+  }
+  if (error) authRedirect("/auth/resend-confirmation", error.message);
+  authRedirect("/auth/sign-in", "If that account is waiting for confirmation, a new email is on its way.");
+}
+
+export async function resetPassword(formData: FormData) {
+  const password = rawValue(formData, "password");
+  const confirmPassword = rawValue(formData, "confirmPassword");
+  if (password !== confirmPassword) authRedirect("/auth/reset-password", "The passwords do not match.");
+  const passwordError = await validatePasswordSecurely(password);
+  if (passwordError) authRedirect("/auth/reset-password", passwordError);
+
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims?.sub) authRedirect("/auth/forgot-password", "Your reset link has expired. Request a new one.");
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) authRedirect("/auth/reset-password", error.message);
+  await supabase.auth.signOut({ scope: "local" });
+  authRedirect("/auth/sign-in", "Password updated. Sign in with your new password.");
+}

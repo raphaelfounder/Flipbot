@@ -1,5 +1,7 @@
 import "server-only";
 
+import { AsyncLocalStorage } from "node:async_hooks";
+
 export type RuntimeCatalogueVariant = {
   variant_id: string;
   canonical_name: string;
@@ -52,8 +54,15 @@ type RuntimeResponse = {
   catalogue?: RuntimeCatalogueVariant[];
   valuationId?: string;
   complete?: boolean;
+  deleted?: boolean;
   error?: string;
 };
+
+const runtimeUser = new AsyncLocalStorage<string>();
+
+export function withRuntimeUser<T>(userId: string, task: () => Promise<T>) {
+  return runtimeUser.run(userId, task);
+}
 
 export function getRuntimeConfiguration() {
   return Boolean(process.env.FLIPBOT_RUNTIME_URL && process.env.FLIPBOT_RUNTIME_KEY);
@@ -93,6 +102,11 @@ export async function completeRuntimeSearch(payload: Record<string, unknown>) {
   if (!response.complete) throw new Error("Search results were not persisted.");
 }
 
+export async function deleteRuntimeAccount() {
+  const response = await runtimeRequest("delete_account", {});
+  if (!response.deleted) throw new Error("Your account could not be deleted.");
+}
+
 async function runtimeRequest(action: string, payload: Record<string, unknown>): Promise<RuntimeResponse> {
   const endpoint = process.env.FLIPBOT_RUNTIME_URL;
   const internalKey = process.env.FLIPBOT_RUNTIME_KEY;
@@ -106,7 +120,7 @@ async function runtimeRequest(action: string, payload: Record<string, unknown>):
         "Content-Type": "application/json",
         "x-flipbot-internal-key": internalKey,
       },
-      body: JSON.stringify({ action, payload }),
+      body: JSON.stringify({ action, payload: { ...payload, userId: runtimeUser.getStore() } }),
       cache: "no-store",
       signal: AbortSignal.timeout(30_000),
     });
