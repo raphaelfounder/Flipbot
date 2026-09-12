@@ -7,5 +7,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // Only refresh Supabase sessions on routes that actually read account data.
+  // Public marketing, legal and auth form pages must remain renderable before
+  // deployment environment variables are configured.
+  matcher: ["/app/:path*", "/api/account/:path*"],
 };
