@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-09T00:00:00.000Z",
+  "title": "Design System: Flipbot",
+  "extensions": {
+    "colorMeta": {
+      "action-blue": { "role": "primary", "displayName": "Signal Blue", "canonical": "#246bfd", "tonalRamp": ["#05132e", "#09255c", "#0e378a", "#174fc1", "#246bfd", "#4c8dff", "#92b8ff", "#eaf1ff"] },
+      "action-blue-bright": { "role": "primary", "displayName": "Active Signal", "canonical": "#4c8dff", "tonalRamp": ["#07142c", "#102958", "#183d85", "#2458b8", "#3674e8", "#4c8dff", "#9abfff", "#edf4ff"] },
+      "action-blue-soft": { "role": "primary", "displayName": "Deep Signal", "canonical": "#174fc1", "tonalRamp": ["#051027", "#0a214e", "#0f3277", "#174fc1", "#3274e0", "#6598ed", "#a6c4f6", "#edf4fd"] },
+      "action-blue-deep": { "role": "primary", "displayName": "Signal Depth", "canonical": "#071a44", "tonalRamp": ["#030812", "#071a44", "#0c2e72", "#16469d", "#2f66c4", "#6893dd", "#acc5ec", "#eef4fb"] },
+      "canvas-ink": { "role": "neutral", "displayName": "Canvas Ink", "canonical": "#020308", "tonalRamp": ["#020308", "#12141b", "#272a33", "#434751", "#686c76", "#969aa3", "#c8cbd1", "#f1f2f4"] },
+      "canvas-soft": { "role": "neutral", "displayName": "Soft Canvas", "canonical": "#05070d", "tonalRamp": ["#05070d", "#171922", "#2d3039", "#4a4d57", "#70747e", "#9da1aa", "#ced0d6", "#f3f4f6"] },
+      "surface-navy": { "role": "neutral", "displayName": "Surface Navy", "canonical": "#070a11", "tonalRamp": ["#070a11", "#181d27", "#2c3543", "#455264", "#66768a", "#909daf", "#c2c9d3", "#f0f2f5"] },
+      "surface-hover": { "role": "neutral", "displayName": "Hover Navy", "canonical": "#0a0f1b", "tonalRamp": ["#0a0f1b", "#192538", "#2a3b56", "#415979", "#61799a", "#8da0b9", "#c0cad7", "#eff2f6"] },
+      "text-primary": { "role": "neutral", "displayName": "Paper White", "canonical": "#f7f9ff", "tonalRamp": ["#17181c", "#303138", "#4b4d56", "#696b76", "#90929d", "#b9bbc4", "#dfe1e8", "#f7f9ff"] },
+      "text-secondary": { "role": "neutral", "displayName": "Steel Copy", "canonical": "#a4adbd", "tonalRamp": ["#171a1f", "#30353d", "#4a515d", "#656e7d", "#828c9d", "#a4adbd", "#ced3dc", "#f1f3f6"] },
+      "text-muted": { "role": "neutral", "displayName": "Muted Slate", "canonical": "#687386", "tonalRamp": ["#111419", "#272c34", "#3e4652", "#566171", "#687386", "#949dab", "#c4c9d0", "#eef0f3"] },
+      "border-cool": { "role": "neutral", "displayName": "Cool Hairline", "canonical": "rgba(120, 155, 255, 0.12)", "tonalRamp": ["#151923", "#293247", "#3d4b6b", "#536791", "#7185b1", "#97a7ca", "#c4cce0", "#f0f2f8"] },
+      "profit-positive": { "role": "tertiary", "displayName": "Profit Mint", "canonical": "#6ee7b7", "tonalRamp": ["#09251b", "#124a36", "#1c7052", "#27976f", "#3dbf8d", "#6ee7b7", "#adefd5", "#ebfbf4"] },
+      "warning-caution": { "role": "tertiary", "displayName": "Caution Amber", "canonical": "#fcd34d", "tonalRamp": ["#2a2105", "#55420a", "#80640f", "#aa861b", "#d5aa2d", "#fcd34d", "#ffe69a", "#fff8df"] },
+      "danger-critical": { "role": "tertiary", "displayName": "Critical Rose", "canonical": "#fecaca", "tonalRamp": ["#2b1010", "#562020", "#823232", "#ad4949", "#d76e6e", "#f19a9a", "#fecaca", "#fff1f1"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Task Display", "purpose": "Primary dashboard task introductions." },
+      "headline": { "displayName": "Surface Headline", "purpose": "Account and substantial secondary surface titles." },
+      "title": { "displayName": "Operational Title", "purpose": "Deal names, sections and dialog headings." },
+      "body": { "displayName": "Operating Copy", "purpose": "Controls, evidence and explanations." },
+      "label": { "displayName": "Metadata Label", "purpose": "Field labels and compact evidence metadata." }
+    },
+    "shadows": [
+      { "name": "surface-ambient", "value": "0 24px 70px rgb(0 0 0 / 0.2)", "purpose": "Reinforces a large reusable surface when tonal separation is insufficient." },
+      { "name": "floating-control", "value": "0 18px 50px rgba(0, 0, 0, 0.5)", "purpose": "Mobile navigation and transient notices." },
+      { "name": "overlay-deep", "value": "0 24px 80px rgba(0, 0, 0, 0.6)", "purpose": "Confirmation and onboarding dialogs." },
+      { "name": "sheet-directional", "value": "-24px 0 70px rgba(0, 0, 0, 0.45)", "purpose": "Right-edge deal inspection sheet." }
+    ],
+    "motion": [
+      { "name": "state-fast", "value": "160ms ease", "purpose": "Button, chip, menu and compact-control state changes." },
+      { "name": "image-inspect", "value": "500ms ease", "purpose": "Subtle product-image scale when a deal card is inspected by hover." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "Global non-essential animation and transition reduction when requested." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ],
+    "components": [
+      {
+        "name": "Primary Button",
+        "kind": "button",
+        "refersTo": "button-primary",
+        "description": "The single high-emphasis action in a task region.",
+        "html": "<button class=\"ds-btn-primary\">Find deals</button>",
+        "css": ".ds-btn-primary { display:inline-flex; min-height:2.75rem; align-items:center; justify-content:center; gap:.5rem; border:0; border-radius:.75rem; background:var(--blue); color:var(--text); padding:.625rem 1rem; font:600 .875rem/1.25 var(--font-source-sans-pro),Arial,sans-serif; transition:background 160ms ease; } .ds-btn-primary:hover { background:var(--blue-bright); } .ds-btn-primary:focus-visible { outline:2px solid #60a5fa; outline-offset:4px; } .ds-btn-primary:active { background:var(--blue-soft); }"
+      },
+      {
+        "name": "Secondary Button",
+        "kind": "button",
+        "refersTo": "button-secondary",
+        "description": "Supporting action that remains subordinate to the blue primary.",
+        "html": "<button class=\"ds-btn-secondary\">Advanced filters</button>",
+        "css": ".ds-btn-secondary { display:inline-flex; min-height:2.75rem; align-items:center; justify-content:center; gap:.5rem; border:1px solid rgb(255 255 255 / .1); border-radius:.75rem; background:transparent; color:rgb(226 232 240); padding:.625rem 1rem; font:600 .875rem/1.25 var(--font-source-sans-pro),Arial,sans-serif; transition:background 160ms ease,color 160ms ease; } .ds-btn-secondary:hover { background:rgb(255 255 255 / .05); color:#fff; } .ds-btn-secondary:focus-visible { outline:2px solid #60a5fa; outline-offset:4px; } .ds-btn-secondary:active { background:rgb(255 255 255 / .08); }"
+      },
+      {
+        "name": "Field",
+        "kind": "input",
+        "refersTo": "input-default",
+        "description": "Quiet dark input for search constraints, notes and account data.",
+        "html": "<label class=\"ds-field\"><span>Location</span><input value=\"London\" aria-label=\"Location\"></label>",
+        "css": ".ds-field { display:grid; gap:.5rem; color:rgb(148 163 184); font:500 .75rem/1.25 var(--font-source-sans-pro),Arial,sans-serif; } .ds-field input { min-height:2.75rem; width:100%; border:1px solid rgb(255 255 255 / .08); border-radius:.75rem; background:rgb(255 255 255 / .035); color:#fff; padding:0 .75rem; font:400 .875rem/1.5 var(--font-source-sans-pro),Arial,sans-serif; outline:none; } .ds-field input:hover { border-color:rgb(255 255 255 / .14); } .ds-field input:focus-visible { border-color:rgb(147 197 253 / .45); box-shadow:0 0 0 2px rgb(59 130 246 / .18); }"
+      },
+      {
+        "name": "Primary Navigation",
+        "kind": "nav",
+        "description": "Persistent three-destination operating navigation with one active state.",
+        "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><button class=\"ds-nav-item ds-nav-active\" aria-current=\"page\">Find a Deal</button><button class=\"ds-nav-item\">Scanner</button><button class=\"ds-nav-item\">Saved Deals</button></nav>",
+        "css": ".ds-nav { display:grid; gap:.25rem; width:232px; padding:1rem; background:#04070d; } .ds-nav-item { min-height:3rem; border:0; border-radius:.75rem; background:transparent; color:rgb(148 163 184); padding:0 .75rem; text-align:left; font:500 .875rem/1.25 var(--font-source-sans-pro),Arial,sans-serif; transition:background 160ms ease,color 160ms ease; } .ds-nav-item:hover { background:rgb(255 255 255 / .04); color:#fff; } .ds-nav-item:focus-visible { outline:2px solid #60a5fa; outline-offset:2px; } .ds-nav-active { background:rgb(59 130 246 / .12); color:rgb(219 234 254); box-shadow:inset 0 0 0 1px rgb(147 197 253 / .15); }"
+      },
+      {
+        "name": "Status Chip",
+        "kind": "chip",
+        "description": "Compact account, filter or unlocked-status context.",
+        "html": "<button class=\"ds-chip\">1,240 credits</button>",
+        "css": ".ds-chip { display:inline-flex; min-height:2.5rem; align-items:center; gap:.5rem; border:1px solid rgb(255 255 255 / .08); border-radius:.75rem; background:rgb(255 255 255 / .025); color:rgb(203 213 225); padding:.5rem .75rem; font:400 .875rem/1.25 var(--font-source-sans-pro),Arial,sans-serif; transition:background 160ms ease,color 160ms ease; } .ds-chip:hover { background:rgb(255 255 255 / .05); color:#fff; } .ds-chip:focus-visible { outline:2px solid #60a5fa; outline-offset:4px; } .ds-chip:active { background:rgb(59 130 246 / .12); color:rgb(219 234 254); }"
+      },
+      {
+        "name": "Deal Card",
+        "kind": "card",
+        "refersTo": "card-deal",
+        "description": "Signature comparison card that keeps product identity and resale evidence together.",
+        "html": "<article class=\"ds-deal\"><div class=\"ds-deal-source\">Marketplace · 2h</div><h3>iPhone 15 Pro Max 128GB</h3><p>London · Low risk</p><div class=\"ds-deal-metrics\"><span><strong>£525</strong><small>Buy</small></span><span><strong>£690</strong><small>Resale</small></span><span class=\"ds-positive\"><strong>£165</strong><small>Profit</small></span><span class=\"ds-positive\"><strong>31%</strong><small>ROI</small></span></div><button>Flip Score 86 · Inspect</button></article>",
+        "css": ".ds-deal { width:min(100%,560px); border:1px solid rgb(255 255 255 / .08); border-radius:1rem; background:#060911; color:#fff; padding:1rem; font-family:var(--font-source-sans-pro),Arial,sans-serif; transition:border-color 160ms ease; } .ds-deal:hover { border-color:rgb(147 197 253 / .2); } .ds-deal-source { color:rgb(191 219 254); font-size:.75rem; font-weight:500; } .ds-deal h3 { margin:.25rem 0 0; font-size:1rem; line-height:1.5; } .ds-deal p { margin:.25rem 0 0; color:rgb(100 116 139); font-size:.75rem; } .ds-deal-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; padding-top:1rem; } .ds-deal-metrics span { display:grid; gap:.125rem; } .ds-deal-metrics strong { font-size:.875rem; font-variant-numeric:tabular-nums; } .ds-deal-metrics small { color:rgb(100 116 139); font-size:.625rem; } .ds-deal-metrics .ds-positive strong { color:rgb(110 231 183); } .ds-deal > button { width:100%; margin-top:.75rem; border:0; background:transparent; color:rgb(191 219 254); padding:0; text-align:right; font-size:.75rem; font-weight:600; } .ds-deal > button:hover { color:#fff; } .ds-deal > button:focus-visible { outline:2px solid #60a5fa; outline-offset:4px; }"
+      },
+      {
+        "name": "Deal Inspection Sheet",
+        "kind": "custom",
+        "description": "Full-height evidence layer opened from any deal source.",
+        "html": "<aside class=\"ds-sheet\" aria-label=\"Deal inspection\"><header>Deal inspection</header><section><h3>Resale evidence</h3><p>Comparable sales, valuation reasoning and risk remain in one reading flow.</p></section><footer><button class=\"ds-sheet-secondary\">Save deal</button><button class=\"ds-sheet-primary\">View listing</button></footer></aside>",
+        "css": ".ds-sheet { width:min(100%,660px); min-height:420px; border-left:1px solid rgb(255 255 255 / .09); background:#050810; color:#fff; box-shadow:-24px 0 70px rgba(0,0,0,.45); font-family:var(--font-source-sans-pro),Arial,sans-serif; } .ds-sheet header { min-height:4rem; display:flex; align-items:center; border-bottom:1px solid rgb(255 255 255 / .08); padding:0 1.25rem; font-weight:600; } .ds-sheet section { padding:1.75rem; } .ds-sheet h3 { margin:0; font-size:1.25rem; } .ds-sheet p { color:rgb(148 163 184); font-size:.875rem; line-height:1.5; } .ds-sheet footer { display:flex; gap:.75rem; border-top:1px solid rgb(255 255 255 / .08); padding:1rem 1.75rem; } .ds-sheet footer button { min-height:2.75rem; flex:1; border-radius:.75rem; padding:.625rem 1rem; font-weight:600; } .ds-sheet-primary { border:0; background:#246bfd; color:#fff; } .ds-sheet-primary:hover { background:#4c8dff; } .ds-sheet-secondary { border:1px solid rgb(255 255 255 / .1); background:transparent; color:rgb(226 232 240); } .ds-sheet-secondary:hover { background:rgb(255 255 255 / .05); color:#fff; } .ds-sheet footer button:focus-visible { outline:2px solid #60a5fa; outline-offset:4px; }"
+      }
+    ],
+    "narrative": {
+      "northStar": "The Resale Intelligence Desk",
+      "overview": "Flipbot behaves like a focused operating desk for resale decisions: dark, calm and information-dense, with enough visual structure to compare opportunities quickly. Near-black navy layers reduce glare and make product imagery, prices and evidence carry the screen. Electric blue is deliberately scarce; it identifies active navigation, primary actions and interactive evidence rather than decorating empty space.\n\nThe system is desktop-first without treating mobile as a reduced product. Desktop uses a persistent rail and broad comparison canvas; mobile converts the same three primary destinations into a reachable bottom bar and stacks evidence without removing it. Representative or provisional information is labelled in context, and valuation confidence is communicated with words and evidence rather than colour alone.",
+      "keyCharacteristics": [
+        "Near-black navy surfaces separated by cool, low-contrast borders.",
+        "Restrained electric-blue accents reserved for action and selection.",
+        "Compact, evidence-heavy deal cards with product imagery and tabular figures.",
+        "Progressive disclosure for advanced filters, account tools and deal detail.",
+        "Responsive navigation that preserves Find a Deal, Scanner and Saved Deals as peers."
+      ],
+      "rules": [
+        { "name": "The One Signal Rule", "body": "Blue is the shared language of primary action, selection and active navigation; keep it rare enough that those states remain unmistakable.", "section": "colors" },
+        { "name": "The Evidence Before Colour Rule", "body": "Semantic colour reinforces a written value or state and never carries meaning alone.", "section": "colors" },
+        { "name": "The Comparison First Rule", "body": "Prices, profit, ROI and credit balances use tabular numerals so columns do not shift while values change.", "section": "typography" },
+        { "name": "The Quiet Metadata Rule", "body": "Small type is reserved for short labels and metadata; explanations remain at body size with generous leading.", "section": "typography" },
+        { "name": "The Preserve the Evidence Rule", "body": "Responsive layouts reflow controls and comparisons; they do not hide valuation evidence or demote a primary destination.", "section": "layout" },
+        { "name": "The Flat Until Floating Rule", "body": "In-flow cards use border and tone at rest; strong shadows belong only to elements that genuinely float above or slide over the workspace.", "section": "elevation" },
+        { "name": "The Nested Radius Rule", "body": "Inner controls use a tighter radius than their parent surface, preserving a clear container hierarchy.", "section": "shapes" }
+      ],
+      "dos": [
+        "Do lead operational surfaces toward one clear next action, using Signal Blue for that action.",
+        "Do keep representative, estimated, locked or prototype information labelled beside the affected content.",
+        "Do use tabular numerals and stable metric order for price, resale, profit and ROI comparisons.",
+        "Do preserve keyboard focus, reduced-motion behavior and text labels alongside icons.",
+        "Do keep Find a Deal, Scanner and Saved Deals as the primary navigation set across viewport sizes."
+      ],
+      "donts": [
+        "Don't use blue as ambient decoration across every card; its scarcity establishes hierarchy.",
+        "Don't replace evidence with a score, colour or optimistic claim.",
+        "Don't add permanent primary-navigation destinations for account utilities or future product areas.",
+        "Don't hide financial or risk evidence merely to make mobile cards shorter.",
+        "Don't introduce bright white panels, glass-heavy effects or warm decorative palettes into the operating workspace."
+      ]
+    }
+  }
+}

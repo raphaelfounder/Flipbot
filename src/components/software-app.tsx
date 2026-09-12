@@ -65,6 +65,7 @@ import {
 } from "@/lib/app-data";
 import { faqItems, helpTopics, policyDocuments, policyOrder, type HelpTopicId, type PolicyId } from "@/lib/flipbot-copy";
 import { cn } from "@/lib/utils";
+import { FlipbotDashboard } from "@/components/flipbot-dashboard";
 
 type PageId =
   | "home"
@@ -137,6 +138,7 @@ export type UserSettings = {
   maxPurchase: number;
   riskTolerance: "Low" | "Medium" | "High";
   emailAlerts: boolean;
+  marketingEmailOptIn: boolean;
   quietHours: string;
   compactCards: boolean;
   reducedMotion: boolean;
@@ -154,6 +156,12 @@ export type AccountProfile = {
   phoneVerified: boolean;
   memberSince: string;
   plan: string;
+};
+
+export type CreditSummary = {
+  subscriptionCredits: number;
+  subscriptionCreditsExpireAt: string | null;
+  purchasedCredits: number;
 };
 
 type ScannerResult = {
@@ -266,6 +274,7 @@ export const defaultUserSettings: UserSettings = {
   maxPurchase: 500,
   riskTolerance: "Medium",
   emailAlerts: true,
+  marketingEmailOptIn: false,
   quietHours: "22:00-08:00",
   compactCards: false,
   reducedMotion: false,
@@ -308,7 +317,13 @@ function getDealUrl(deal: AppDeal) {
   return `https://www.ebay.co.uk/sch/i.html?_nkw=${encodeURIComponent(deal.title)}`;
 }
 
-export function FlipbotSoftwareApp({ initialProfile, initialUserSettings }: { initialProfile: AccountProfile; initialUserSettings: UserSettings }) {
+export function FlipbotSoftwareApp({ initialProfile, initialUserSettings, initialCredits }: { initialProfile: AccountProfile; initialUserSettings: UserSettings; initialCredits: CreditSummary }) {
+  return <FlipbotDashboard initialProfile={initialProfile} initialUserSettings={initialUserSettings} initialCredits={initialCredits} />;
+}
+
+// Kept temporarily as a reference while the backend search surface is being rebuilt separately.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function LegacyFlipbotSoftwareApp({ initialProfile, initialUserSettings }: { initialProfile: AccountProfile; initialUserSettings: UserSettings }) {
   const [activePage, setActivePage] = useState<PageId>("home");
   const [helpTopic, setHelpTopic] = useState<HelpTopicId | null>(null);
   const [lightMode, setLightMode] = useState(false);
@@ -2009,8 +2024,7 @@ function PolicyPage({ id, onBack, onNavigate }: { id: PolicyId; onBack: () => vo
     <div className="mx-auto max-w-5xl space-y-5">
       <button onClick={onBack} className="text-sm font-semibold text-blue-200 hover:text-white">← Back to Help</button>
       <Panel>
-        <div className="flex flex-col gap-5 border-b border-white/[0.07] pb-7 sm:flex-row sm:items-start sm:justify-between"><div><Icon className="h-8 w-8 text-blue-200" /><h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em]">{document.title}</h1><p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">{document.description}</p><p className="mt-3 text-xs text-slate-500">{document.updated}</p></div><Badge tone="blue">Working draft</Badge></div>
-        {document.draftNote ? <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-400/[0.07] p-4"><p className="text-sm font-semibold text-amber-100">Details required before publication</p><p className="mt-1 text-sm leading-6 text-amber-50/70">{document.draftNote}</p></div> : null}
+        <div className="flex flex-col gap-5 border-b border-white/[0.07] pb-7 sm:flex-row sm:items-start sm:justify-between"><div><Icon className="h-8 w-8 text-blue-200" /><h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em]">{document.title}</h1><p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">{document.description}</p><p className="mt-3 text-xs text-slate-500">{document.updated}</p></div><Badge tone="blue">Current policy</Badge></div>
         <div className="mt-8 space-y-9">{document.sections.map((section) => <section key={section.title} className="max-w-4xl"><h2 className="text-xl font-semibold">{section.title}</h2><div className="mt-3 space-y-3">{section.paragraphs.map((paragraph) => <p key={paragraph} className="text-sm leading-7 text-slate-400">{paragraph}</p>)}</div>{section.bullets ? <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-400">{section.bullets.map((bullet) => <li key={bullet} className="flex gap-2"><span className="text-blue-200">•</span><span>{bullet}</span></li>)}</ul> : null}</section>)}</div>
       </Panel>
       <div className="flex flex-wrap gap-2">{policyOrder.filter((policyId) => policyId !== id).map((policyId) => <GhostButton key={policyId} onClick={() => onNavigate(policyId)}>{policyDocuments[policyId].title}</GhostButton>)}</div>

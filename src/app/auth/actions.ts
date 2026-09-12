@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { validatePasswordSecurely } from "@/lib/auth/password-security";
 import { validateUsername } from "@/lib/auth/username-policy";
+import { legalVersions } from "@/lib/legal";
 import { createClient } from "@/lib/supabase/server";
 
 function value(formData: FormData, key: string) {
@@ -45,23 +46,27 @@ export async function signIn(formData: FormData) {
   redirect("/app");
 }
 
-export async function signUp(formData: FormData) {
+export type SignUpState = { error: string | null };
+
+export async function signUp(_previousState: SignUpState, formData: FormData): Promise<SignUpState> {
   const fullName = value(formData, "fullName");
   const username = value(formData, "username").toLowerCase();
   const email = value(formData, "email").toLowerCase();
   const password = rawValue(formData, "password");
   const confirmPassword = rawValue(formData, "confirmPassword");
   const acceptedTerms = formData.get("acceptedTerms") === "on";
-  const token = captchaToken(formData, "/auth/sign-up");
+  const marketingConsent = formData.get("marketingConsent") === "on";
+  const token = rawValue(formData, "cf-turnstile-response");
 
-  if (!acceptedTerms) authRedirect("/auth/sign-up", "Confirm that you are at least 18 and agree to the Terms and Privacy Policy.");
-  if (fullName.length < 2) authRedirect("/auth/sign-up", "Enter your full name.");
+  if (!acceptedTerms) return { error: "Confirm that you are at least 18 and agree to the Terms and Privacy Policy." };
+  if (fullName.length < 2) return { error: "Enter your full name." };
   const usernameError = validateUsername(username);
-  if (usernameError) authRedirect("/auth/sign-up", usernameError);
-  if (!/^\S+@\S+\.\S+$/.test(email)) authRedirect("/auth/sign-up", "Enter a valid email address.");
-  if (password !== confirmPassword) authRedirect("/auth/sign-up", "The passwords do not match.");
+  if (usernameError) return { error: usernameError };
+  if (!/^\S+@\S+\.\S+$/.test(email)) return { error: "Enter a valid email address." };
+  if (password !== confirmPassword) return { error: "The passwords do not match." };
   const passwordError = await validatePasswordSecurely(password, [fullName, username, email.split("@")[0] || ""]);
-  if (passwordError) authRedirect("/auth/sign-up", passwordError);
+  if (passwordError) return { error: passwordError };
+  if (!token) return { error: "Complete the bot-protection check and try again." };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -69,12 +74,19 @@ export async function signUp(formData: FormData) {
     password,
     options: {
       emailRedirectTo: `${await siteOrigin()}/auth/callback?next=/app&verified=1`,
-      data: { full_name: fullName, username },
+      data: {
+        full_name: fullName,
+        username,
+        accepted_terms_version: legalVersions.terms,
+        accepted_privacy_version: legalVersions.privacy,
+        accepted_acceptable_use_version: legalVersions.acceptableUse,
+        marketing_email_consent: marketingConsent,
+      },
       captchaToken: token,
     },
   });
 
-  if (error) authRedirect("/auth/sign-up", error.message);
+  if (error) return { error: error.message };
   if (data.session) redirect("/app");
   authRedirect("/auth/sign-in", "Check your email to confirm your account, then sign in.");
 }

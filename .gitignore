@@ -13,6 +13,8 @@
 # testing
 /coverage
 /.npm-cache/
+/.unlazy/
+/.impeccable/cache/
 
 # next.js
 /.next/

@@ -17,7 +17,6 @@ export default async function LegalPolicyPage({ params }: { params: Promise<{ po
         <h1 className="mt-8 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">{document.title}</h1>
         <p className="mt-4 leading-7 text-slate-400">{document.description}</p>
         <p className="mt-3 text-xs text-slate-500">{document.updated}</p>
-        {document.draftNote ? <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-400/[0.07] p-4 text-sm leading-6 text-amber-50/80"><strong className="block text-amber-100">Draft—details still required</strong>{document.draftNote}</div> : null}
         <div className="mt-10 space-y-9">
           {document.sections.map((section) => (
             <section key={section.title}>
@@ -28,6 +27,9 @@ export default async function LegalPolicyPage({ params }: { params: Promise<{ po
           ))}
         </div>
       </article>
+      <footer className="mx-auto mt-6 max-w-4xl text-center text-xs leading-6 text-slate-500">
+        Fornix Digital · Raphael Richardson and Oliver Sierra · Office 21119, 182–184 High Street North, East Ham, London, E6 2JA, United Kingdom · <a className="text-blue-300 hover:text-white" href="mailto:team@flipbot.me">team@flipbot.me</a>
+      </footer>
     </main>
   );
 }

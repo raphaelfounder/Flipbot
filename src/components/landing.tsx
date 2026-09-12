@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
   Check,
   ChevronDown,
@@ -11,7 +12,7 @@ import {
 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { demoDeals, secondaryDemoDeals, testimonials } from "@/lib/demo-data";
+import { demoDeals, secondaryDemoDeals } from "@/lib/demo-data";
 import { cn } from "@/lib/utils";
 import { CursorGlow, MagneticButton, Reveal, SpotlightCard, useScrolled } from "./motion-kit";
 import { MotionNavigationMenu, SquarePattern } from "./unlumen-inspired";
@@ -110,7 +111,6 @@ export function FlipbotLanding() {
       <FlipScore />
       <ScannerSection />
       <CexInstantBuy />
-      <Testimonials />
       <Community />
       <Pricing />
       <FAQ />
@@ -129,17 +129,17 @@ function Navbar() {
           scrolled ? "border-blue-200/10 bg-[#030711]/80 shadow-[0_12px_60px_rgba(0,0,0,.38)] backdrop-blur-xl" : "border-white/[0.06] bg-white/[0.02]",
         )}
       >
-        <a href="#" className="flex items-center gap-2 font-semibold tracking-wide focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
+        <Link href="/" className="flex items-center gap-2 font-semibold tracking-wide focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
           <FlipbotLogoMark />
           FLIPBOT
-        </a>
+        </Link>
         <MotionNavigationMenu items={navItems} />
         <div className="flex items-center gap-3 text-sm">
-          <a href="#" className="hidden text-slate-300 hover:text-white sm:inline">
+          <a href="/auth/sign-in" className="hidden text-slate-300 hover:text-white sm:inline">
             Log in
           </a>
-          <MagneticButton className="min-h-10 px-4 py-2" href="#pricing">
-            Start Free Trial
+          <MagneticButton className="min-h-10 px-4 py-2" href="/auth/sign-up">
+            Create account
           </MagneticButton>
         </div>
       </nav>
@@ -188,7 +188,7 @@ function Hero() {
           </p>
         </Reveal>
         <Reveal delay={0.3} className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <MagneticButton href="#pricing">Start Free Trial</MagneticButton>
+          <MagneticButton href="/auth/sign-up">Create your account</MagneticButton>
           <MagneticButton href="#flip-score" variant="secondary">
             See How It Works
           </MagneticButton>
@@ -203,7 +203,8 @@ function DealShowcase() {
     <section className="relative z-10 px-4 py-14">
       <div className="mx-auto max-w-7xl">
         <div className="mb-5 text-center">
-          <h2 className="text-3xl font-semibold tracking-[-0.035em]">Real Flipbot opportunities</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.035em]">Example Flipbot opportunities</h2>
+          <p className="mt-2 text-sm text-slate-400">Representative listings show how Flipbot compares potential deals.</p>
         </div>
         <DealTicker direction="left" deals={demoDeals} />
         <DealTicker direction="right" deals={secondaryDemoDeals} className="mt-4" />
@@ -383,33 +384,6 @@ function CexInstantBuy() {
   );
 }
 
-function Testimonials() {
-  return (
-    <section className="relative z-10 px-4 py-20">
-      <SectionHeader eyebrow="Testimonials" title="Built for people who actually resell." copy="5-star example reviews showing the kind of feedback Flipbot is designed around." />
-      <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-3">
-        {testimonials.map((item, index) => (
-          <Reveal key={item.quote} delay={index * 0.08}>
-            <SpotlightCard className="p-6">
-              <div className="text-lg tracking-[0.06em] text-blue-200" aria-label="5 star review">
-                ★★★★★
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="mt-5 grid h-11 w-11 place-items-center rounded-full border border-blue-200/20 bg-blue-400/10 text-sm font-semibold text-blue-100">{item.name.slice(0, 1)}</div>
-                <div>
-                  <p className="font-semibold">{item.name}</p>
-                  <p className="text-sm text-slate-500">{item.role}</p>
-                </div>
-              </div>
-              <p className="mt-5 leading-7 text-slate-200">&quot;{item.quote}&quot;</p>
-            </SpotlightCard>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function Community() {
   return (
     <section className="relative z-10 px-4 py-20">
@@ -422,7 +396,7 @@ function Community() {
             <h2 className="text-3xl font-semibold tracking-[-0.035em] md:text-5xl">Flip with other resellers, not on your own.</h2>
             <p className="mt-4 max-w-2xl leading-7 text-slate-300">Join the Flipbot Discord to talk sourcing, share finds, learn from other resellers and keep up with product updates.</p>
           </div>
-          <MagneticButton href="#">Join the Community</MagneticButton>
+          <MagneticButton href="mailto:team@flipbot.me?subject=Flipbot%20community%20updates">Get community updates</MagneticButton>
         </div>
       </SpotlightCard>
     </section>
@@ -521,11 +495,11 @@ function ProfitBadge({ children }: { children: React.ReactNode }) {
 
 function Footer() {
   const columns = {
-    Product: ["Deal Finder", "Scanner", "Pricing", "Flip Score"],
-    Resources: ["Help", "FAQ", "Community", "Discord"],
-    Company: ["Contact"],
-    Legal: ["Terms", "Privacy", "Cookies"],
-    Account: ["Log In", "Get Started"],
+    Product: [{ label: "Deal Finder", href: "#flip-score" }, { label: "Scanner", href: "#scanner" }, { label: "Pricing", href: "#pricing" }, { label: "Flip Score", href: "#flip-score" }],
+    Resources: [{ label: "Help", href: "mailto:team@flipbot.me?subject=Flipbot%20help" }, { label: "FAQ", href: "#faq" }, { label: "Community", href: "mailto:team@flipbot.me?subject=Flipbot%20community%20updates" }],
+    Company: [{ label: "Contact", href: "mailto:team@flipbot.me" }],
+    Legal: [{ label: "Terms", href: "/legal/terms" }, { label: "Privacy", href: "/legal/privacy" }, { label: "Cookies", href: "/legal/cookies" }, { label: "Acceptable use", href: "/legal/acceptable-use" }],
+    Account: [{ label: "Log in", href: "/auth/sign-in" }, { label: "Create account", href: "/auth/sign-up" }],
   };
   return (
     <footer className="relative z-10 border-t border-white/[0.07] px-4 py-12">
@@ -539,8 +513,8 @@ function Footer() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
             <div className="mt-4 space-y-2">
               {links.map((link) => (
-                <a key={link} href="#" className="block text-sm text-slate-400 hover:text-white">
-                  {link}
+                <a key={link.label} href={link.href} className="block text-sm text-slate-400 hover:text-white">
+                  {link.label}
                 </a>
               ))}
             </div>

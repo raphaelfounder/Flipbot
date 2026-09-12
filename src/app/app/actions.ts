@@ -26,6 +26,7 @@ export type SettingsUpdate = {
   maxPurchase: number;
   riskTolerance: "Low" | "Medium" | "High";
   emailAlerts: boolean;
+  marketingEmailOptIn: boolean;
   quietHours: string;
   compactCards: boolean;
   reducedMotion: boolean;
@@ -84,7 +85,11 @@ export async function updateSettingsAction(input: SettingsUpdate): Promise<Accou
     reduced_motion: input.reducedMotion,
     density: input.density,
   }).eq("id", user.id);
-  return error ? { ok: false, message: "Your settings could not be saved." } : { ok: true, message: "Your preferences were updated." };
+  if (error) return { ok: false, message: "Your settings could not be saved." };
+  const { error: marketingError } = await supabase.from("marketing_preferences").update({
+    email_opt_in: input.marketingEmailOptIn,
+  }).eq("user_id", user.id);
+  return marketingError ? { ok: false, message: "Your marketing preference could not be saved." } : { ok: true, message: "Your preferences were updated." };
 }
 
 export async function updatePasswordAction(currentPassword: string, nextPassword: string): Promise<AccountActionResult> {

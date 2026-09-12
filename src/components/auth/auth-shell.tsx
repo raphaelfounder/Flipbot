@@ -36,12 +36,12 @@ export function AuthShell({
   );
 }
 
-export function AuthField({ label, name, type = "text", autoComplete, placeholder, minLength, maxLength, pattern, hint }: { label: string; name: string; type?: string; autoComplete?: string; placeholder?: string; minLength?: number; maxLength?: number; pattern?: string; hint?: string }) {
+export function AuthField({ label, name, type = "text", autoComplete, placeholder, minLength, maxLength, pattern, hint, value, onChange }: { label: string; name: string; type?: string; autoComplete?: string; placeholder?: string; minLength?: number; maxLength?: number; pattern?: string; hint?: string; value?: string; onChange?: React.ChangeEventHandler<HTMLInputElement> }) {
   const hintId = hint ? `${name}-hint` : undefined;
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-semibold text-slate-200">{label}</span>
-      <input name={name} type={type} autoComplete={autoComplete} placeholder={placeholder} minLength={minLength} maxLength={maxLength} pattern={pattern} aria-describedby={hintId} required className="min-h-12 w-full rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-base text-white outline-none placeholder:text-slate-600 focus:border-blue-300/45 focus:ring-2 focus:ring-blue-500/10" />
+      <input name={name} type={type} autoComplete={autoComplete} placeholder={placeholder} minLength={minLength} maxLength={maxLength} pattern={pattern} aria-describedby={hintId} required value={value} onChange={onChange} className="min-h-12 w-full rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-base text-white outline-none placeholder:text-slate-600 focus:border-blue-300/45 focus:ring-2 focus:ring-blue-500/10" />
       {hint ? <span id={hintId} className="mt-2 block text-xs leading-5 text-slate-500">{hint}</span> : null}
     </label>
   );

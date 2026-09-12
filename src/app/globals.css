@@ -1,5 +1,81 @@
 @import "tailwindcss";
 
+@layer components {
+  .input {
+    min-height: 2.75rem;
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(255 255 255 / 0.035);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    color: white;
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .input:focus-visible {
+    border-color: rgb(147 197 253 / 0.45);
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 0.18);
+  }
+
+  .input::placeholder { color: rgb(100 116 139); }
+  select.input option { background: #090c14; color: white; }
+
+  .surface {
+    border-radius: 1.625rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(6 9 17 / 0.96);
+    box-shadow: 0 24px 70px rgb(0 0 0 / 0.2);
+  }
+
+  .control {
+    display: inline-grid;
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+    place-items: center;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    transition: 160ms ease;
+  }
+
+  .control:hover { background: rgb(255 255 255 / 0.05); }
+
+  .primary-button,
+  .secondary-button,
+  .danger-button,
+  .chip,
+  .menu-item {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: 160ms ease;
+  }
+
+  .primary-button { background: #246bfd; color: white; }
+  .primary-button:hover { background: #4c8dff; }
+  .secondary-button { border: 1px solid rgb(255 255 255 / 0.1); color: rgb(226 232 240); }
+  .secondary-button:hover { background: rgb(255 255 255 / 0.05); color: white; }
+  .danger-button { border: 1px solid rgb(252 165 165 / 0.25); background: rgb(239 68 68 / 0.1); color: rgb(254 202 202); }
+  .chip { min-height: 2.5rem; border: 1px solid rgb(255 255 255 / 0.08); background: rgb(255 255 255 / 0.025); padding: 0.5rem 0.75rem; font-weight: 400; color: rgb(203 213 225); }
+  .menu-item { width: 100%; justify-content: flex-start; padding-inline: 0.75rem; color: rgb(203 213 225); text-align: left; }
+  .menu-item:hover { background: rgb(255 255 255 / 0.05); color: white; }
+  .badge { display: inline-flex; align-items: center; gap: 0.3rem; border-radius: 0.5rem; border: 1px solid rgb(255 255 255 / 0.08); background: rgb(255 255 255 / 0.03); padding: 0.3rem 0.5rem; font-size: 0.6875rem; font-weight: 600; }
+
+  .primary-button:disabled,
+  .secondary-button:disabled,
+  .danger-button:disabled,
+  .control:disabled { cursor: not-allowed; opacity: 0.4; }
+
+  .dashboard-compact article .p-4 { padding: 0.75rem; }
+}
+
 :root {
   --background: #020308;
   --background-soft: #05070d;

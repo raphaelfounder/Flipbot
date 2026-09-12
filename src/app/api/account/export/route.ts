@@ -6,11 +6,15 @@ export const runtime = "nodejs";
 
 export async function GET() {
   const { supabase, user } = await requireUser();
-  const [{ data: profile }, { data: settings }, { data: searches }, { data: results }] = await Promise.all([
+  const [{ data: profile }, { data: settings }, { data: searches }, { data: results }, { data: acceptances }, { data: marketing }, { data: creditAccount }, { data: creditLedger }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("user_settings").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("search_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     supabase.from("search_results").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("legal_acceptances").select("terms_version, privacy_version, acceptable_use_version, accepted_at").eq("user_id", user.id).order("accepted_at", { ascending: false }),
+    supabase.from("marketing_preferences").select("email_opt_in, changed_at").eq("user_id", user.id).maybeSingle(),
+    supabase.from("credit_accounts").select("subscription_credits, subscription_credits_expire_at, purchased_credits, updated_at").eq("user_id", user.id).maybeSingle(),
+    supabase.from("credit_ledger").select("reason, subscription_delta, purchased_delta, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
   ]);
 
   const exportedAt = new Date().toISOString();
@@ -27,6 +31,10 @@ export async function GET() {
     settings,
     searches: searches ?? [],
     search_results: results ?? [],
+    legal_acceptances: acceptances ?? [],
+    marketing_preference: marketing,
+    credit_account: creditAccount,
+    credit_ledger: creditLedger ?? [],
   }, null, 2);
 
   return new NextResponse(body, {

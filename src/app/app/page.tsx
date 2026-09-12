@@ -3,9 +3,11 @@ import { requireUser } from "@/lib/supabase/auth";
 
 export default async function AppPage() {
   const { supabase, user } = await requireUser();
-  const [{ data: profile }, { data: settings }] = await Promise.all([
+  const [{ data: profile }, { data: settings }, { data: credits }, { data: marketing }] = await Promise.all([
     supabase.from("profiles").select("full_name, username, location, bio, plan, created_at").eq("id", user.id).maybeSingle(),
     supabase.from("user_settings").select("currency, region, default_marketplace, default_distance, min_profit, max_purchase, risk_tolerance, email_alerts, quiet_hours, compact_cards, reduced_motion, density").eq("id", user.id).maybeSingle(),
+    supabase.from("credit_accounts").select("subscription_credits, subscription_credits_expire_at, purchased_credits").eq("user_id", user.id).maybeSingle(),
+    supabase.from("marketing_preferences").select("email_opt_in").eq("user_id", user.id).maybeSingle(),
   ]);
 
   const fallbackUsername = (user.user_metadata.username || user.email?.split("@")[0] || `user_${user.id.slice(0, 8)}`)
@@ -35,10 +37,16 @@ export default async function AppPage() {
         maxPurchase: Number(settings?.max_purchase ?? 500),
         riskTolerance: settings?.risk_tolerance === "Low" || settings?.risk_tolerance === "High" ? settings.risk_tolerance : "Medium",
         emailAlerts: settings?.email_alerts ?? true,
+        marketingEmailOptIn: marketing?.email_opt_in ?? false,
         quietHours: settings?.quiet_hours || "22:00-08:00",
         compactCards: settings?.compact_cards ?? false,
         reducedMotion: settings?.reduced_motion ?? false,
         density: settings?.density === "Compact" ? "Compact" : "Comfortable",
+      }}
+      initialCredits={{
+        subscriptionCredits: Number(credits?.subscription_credits ?? 0),
+        subscriptionCreditsExpireAt: credits?.subscription_credits_expire_at ?? null,
+        purchasedCredits: Number(credits?.purchased_credits ?? 0),
       }}
     />
   );
