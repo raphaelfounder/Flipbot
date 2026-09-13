@@ -40,7 +40,7 @@ async function siteOrigin() {
     if (requestOrigin && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) {
       return requestOrigin;
     }
-    return "https://flipbot.me";
+    return "https://www.flipbot.me";
   }
 
   return configuredOrigin || requestOrigin || "http://localhost:3000";
