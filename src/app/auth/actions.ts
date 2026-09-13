@@ -28,7 +28,22 @@ function authRedirect(path: string, message: string): never {
 
 async function siteOrigin() {
   const requestHeaders = await headers();
-  return process.env.NEXT_PUBLIC_SITE_URL || requestHeaders.get("origin") || "http://localhost:3000";
+  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  const requestOrigin = requestHeaders.get("origin")?.trim().replace(/\/$/, "");
+
+  // Never send production auth emails back to a developer machine if a local
+  // environment value was accidentally copied into the deployment settings.
+  if (process.env.NODE_ENV === "production") {
+    if (configuredOrigin && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredOrigin)) {
+      return configuredOrigin;
+    }
+    if (requestOrigin && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(requestOrigin)) {
+      return requestOrigin;
+    }
+    return "https://flipbot.me";
+  }
+
+  return configuredOrigin || requestOrigin || "http://localhost:3000";
 }
 
 export async function signIn(formData: FormData) {
