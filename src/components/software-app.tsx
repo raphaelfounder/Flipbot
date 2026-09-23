@@ -591,27 +591,7 @@ function Sidebar({ activePage, setActivePage, profile }: { activePage: PageId; s
 }
 
 function FlipbotLogoMark() {
-  return (
-    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-blue-300/20 bg-[#071525] shadow-[0_0_28px_rgba(36,107,253,.18)]">
-      <svg viewBox="0 0 64 64" className="h-9 w-9" aria-hidden="true">
-        <defs>
-          <linearGradient id="flipbot-app-logo-blue" x1="10" x2="54" y1="6" y2="58" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#4c8dff" />
-            <stop offset="1" stopColor="#155cff" />
-          </linearGradient>
-        </defs>
-        <path d="M16.5 17.5A22 22 0 0 1 41 10.8l-.7-5.2 12.2 9.2-14 5.3 1-5.1a17 17 0 0 0-18.6 5.4" fill="none" stroke="url(#flipbot-app-logo-blue)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" />
-        <path d="M47.5 46.5A22 22 0 0 1 23 53.2l.7 5.2-12.2-9.2 14-5.3-1 5.1a17 17 0 0 0 18.6-5.4" fill="none" stroke="url(#flipbot-app-logo-blue)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" />
-        <rect x="18" y="25" width="28" height="20" rx="7" fill="#020a18" stroke="#1b4fb8" strokeWidth="1.4" />
-        <circle cx="32" cy="14" r="3.5" fill="#020a18" />
-        <path d="M32 23v-7M14 31.5v7M50 31.5v7" stroke="#020a18" strokeLinecap="round" strokeWidth="5" />
-        <path d="M24 34.5a4 4 0 0 1 8 0M34 34.5a4 4 0 0 1 8 0" fill="none" stroke="#246bfd" strokeLinecap="round" strokeWidth="3.8" />
-        <path d="M41.5 41.5 52 37.5l5.5 13.8L47 55.5z" fill="#246bfd" stroke="#dbeafe" strokeLinejoin="round" strokeWidth="1.5" />
-        <circle cx="49.5" cy="42.5" r="1.7" fill="#dbeafe" />
-        <path d="M49.8 46v7.2M46.6 47.3c1.9-1.4 6.6-1.2 6.4 1.4-.2 2.5-6.1 1.2-6.2 3.6-.1 2.1 4.7 2.3 6.8.7" stroke="#fff" strokeLinecap="round" strokeWidth="2" />
-      </svg>
-    </span>
-  );
+  return <Image src="/flipbot-logo.png" alt="" width={44} height={44} sizes="44px" className="h-11 w-11 shrink-0 object-contain" unoptimized priority />;
 }
 
 function NavList({ activePage, onChange }: { activePage: PageId; onChange: (id: PageId) => void }) {

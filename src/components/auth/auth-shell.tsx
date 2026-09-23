@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 
@@ -22,7 +23,7 @@ export function AuthShell({
       <div className="blue-grid pointer-events-none absolute inset-0 opacity-35" />
       <section className="relative w-full max-w-md rounded-[28px] border border-white/[0.09] bg-[#070a11]/92 p-6 shadow-[0_30px_100px_rgba(0,0,0,.55)] backdrop-blur-xl sm:p-8">
         <Link href="/" className="mb-8 inline-flex items-center gap-3" aria-label="Flipbot home">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-blue-500/15 text-sm font-bold text-blue-100 ring-1 ring-blue-300/20">F</span>
+          <Image src="/flipbot-logo.png" alt="" width={40} height={40} sizes="40px" className="h-10 w-10 shrink-0 object-contain" unoptimized priority />
           <span className="font-semibold tracking-[0.14em]">FLIPBOT</span>
         </Link>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">{eyebrow}</p>
