@@ -20,8 +20,8 @@ All operations are transactional. After backup restores, reapply deletions and m
 before serving or importing restored data. Add future caches and exports to this process.
 
 `supabase/functions/flipbot-ebay-privacy/index.ts` is the deployed authenticated gateway.
-It reuses the server-only runtime credential. The website derives its URL from the
-existing `FLIPBOT_RUNTIME_URL`; the old runtime function is unchanged.
+It uses a dedicated server-only webhook credential. Configure its URL with
+`EBAY_DELETION_PROCESSOR_URL` and its secret with `EBAY_DELETION_PROCESSOR_KEY`.
 
 ## Configuration and registration
 
@@ -30,7 +30,7 @@ existing `FLIPBOT_RUNTIME_URL`; the old runtime function is unchanged.
 - `EBAY_DELETION_ENDPOINT`: `https://www.flipbot.me/api/ebay/account-deletion`.
 - `EBAY_DELETION_VERIFICATION_TOKEN`: independent random 32-80 character token,
   letters, digits, underscore and hyphen; not the Client Secret.
-- Existing `FLIPBOT_RUNTIME_URL` and `FLIPBOT_RUNTIME_KEY` settings.
+- `EBAY_DELETION_PROCESSOR_URL` and server-only `EBAY_DELETION_PROCESSOR_KEY`.
 - `EBAY_DELETION_PROCESSOR_READY=true`: after deploying and verifying the processor.
 
 Deploy with these settings, verify the exact canonical URL, then register the alert

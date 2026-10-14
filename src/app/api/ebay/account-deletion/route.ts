@@ -16,11 +16,10 @@ export async function POST(request: Request) {
   return receive(request, {
     publicKey,
     process: async (notice) => {
-      const endpoint = process.env.FLIPBOT_RUNTIME_URL;
-      const key = process.env.FLIPBOT_RUNTIME_KEY;
+      const endpoint = process.env.EBAY_DELETION_PROCESSOR_URL;
+      const key = process.env.EBAY_DELETION_PROCESSOR_KEY;
       if (!endpoint || !key) { console.error("eBay deletion: gateway configuration missing"); throw new Error("Runtime unavailable"); }
       const privacyEndpoint = new URL(endpoint);
-      privacyEndpoint.pathname = privacyEndpoint.pathname.replace(/\/flipbot-runtime\/?$/, "/flipbot-ebay-privacy");
       if (!privacyEndpoint.pathname.endsWith("/flipbot-ebay-privacy")) { console.error("eBay deletion: gateway URL path incompatible"); throw new Error("Invalid runtime URL"); }
       const response = await fetch(privacyEndpoint, {
         method: "POST", cache: "no-store", signal: AbortSignal.timeout(15000),

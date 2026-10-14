@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
-// Uses the existing server-only Flipbot gateway credential; never log its value.
-const EXPECTED_KEY_HASH = "8110a83fb6fe882ea0f712091d3fbee279444c009996c59ae0f821d1c1fe7b7e";
+// Uses a dedicated server-only webhook gateway credential; never log its value.
+const EXPECTED_KEY_HASH = "6b295605f2bc648125d0a6ca5af5ef2c0bfd2deb6778200f27a389a374f2f616";
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
 });
