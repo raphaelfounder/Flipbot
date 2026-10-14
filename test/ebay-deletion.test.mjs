@@ -37,6 +37,11 @@ test('valid eBay-protocol EC signature reaches processor before acknowledgement'
   } });
   assert.equal(response.status, 204); assert.equal(processed, true);
 });
+test('single-line eBay PEM keys authenticate successfully', async () => {
+  const response = await receive(request(), { publicKey: async () => pem.replaceAll('\n', ''), process: async () => {} });
+  assert.equal(response.status, 204);
+});
+
 test('tampered notification never reaches deletion processor', async () => {
   const response = await receive(request(message, true), { publicKey: async () => pem, process: async () => assert.fail('must not process') });
   assert.equal(response.status, 412);

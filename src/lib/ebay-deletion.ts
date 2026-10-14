@@ -73,7 +73,10 @@ export async function receive(request: Request, dependencies: Dependencies): Pro
   try {
     // eBay's reference SDK signs JSON.stringify(message) using ECDSA/SHA-1.
     // The digest is protocol-defined, never selected from untrusted header data.
-    const publicKey = createPublicKey(key);
+    // eBay can return the PEM envelope and body on one line.
+    const formattedKey = key.replace(/-----BEGIN PUBLIC KEY-----\s*/, "-----BEGIN PUBLIC KEY-----\n")
+      .replace(/\s*-----END PUBLIC KEY-----/, "\n-----END PUBLIC KEY-----");
+    const publicKey = createPublicKey(formattedKey);
     if (publicKey.asymmetricKeyType !== "ec" ||
         !verify("sha1", Buffer.from(JSON.stringify(message)), publicKey, Buffer.from(signature.signature, "base64"))) {
       return json({ error: "Invalid signature" }, 412);
