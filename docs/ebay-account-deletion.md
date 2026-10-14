@@ -1,39 +1,50 @@
-# eBay deletion receiver — NOT READY FOR PRODUCTION REGISTRATION
+# eBay marketplace account deletion
 
-The receiver is fail-closed. Keep `EBAY_DELETION_PROCESSOR_READY` unset. Both methods
-return 503 until an audited deletion processor exists. Passing a challenge alone
-does not make this integration compliant.
+The public receiver is `/api/ebay/account-deletion`. It answers eBay's challenge,
+authenticates signatures using eBay public keys, and acknowledges only after the
+private processor commits. Failures return retryable 503 responses. Invalid signatures
+never reach storage. Notification bodies and credentials are not logged.
 
-## Required remaining work
+## Storage
 
-The 14 October read-only database audit found 28,253 `ebay_sold` comparable rows and
-72,511 candidate comparable rows from `soldcomps`. Neither table records seller user
-IDs. Do not delete unrelated Flipbot accounts or purge the whole catalogue in response
-to an eBay user deletion. Establish seller lineage with the data provider and identify
-the associated cached valuations, search results, local exports and backup policy.
+`docs/ebay-privacy-schema.sql` records the applied migration. The private `flipbot_ebay`
+schema is reserved for the new official API integration. RLS is enabled without browser
+policies; only the service role has access. The existing catalogue is not modified.
 
-Implement the authenticated gateway action `process_ebay_deletion` before enabling
-the route. It must process notification IDs idempotently, delete only the relevant
-eBay user's retained data, invalidate derived valuations, prevent re-import of removed
-data, and return `{ "deleted": true }` only after completion. The existing gateway
-does not implement this action; it returns an error. No database changes accompany
-this receiver foundation.
+Future ingestion must retain seller identifiers in `user_data` and link persisted
+derived results through `derived_data.source_id`. Extend deletion before storing API
+user data elsewhere. The processor matches user ID, username or EIAS token, cascades
+dependent results, records hashed deletion markers to block re-import, and handles
+duplicate notification IDs. No-match notices are also recorded and acknowledged.
+All operations are transactional. After backup restores, reapply deletions and markers
+before serving or importing restored data. Add future caches and exports to this process.
 
-## Server configuration after processor completion
+`supabase/functions/flipbot-ebay-privacy/index.ts` is the deployed authenticated gateway.
+It reuses the server-only runtime credential. The website derives its URL from the
+existing `FLIPBOT_RUNTIME_URL`; the old runtime function is unchanged.
+
+## Configuration and registration
 
 - `EBAY_CLIENT_ID`: production App ID.
-- `EBAY_CLIENT_SECRET`: production Cert ID, server-only; do not commit or expose it.
-- `EBAY_DELETION_ENDPOINT`: exact canonical public HTTPS route, with no redirect.
-- `EBAY_DELETION_VERIFICATION_TOKEN`: independent random 32–80 character token using
+- `EBAY_CLIENT_SECRET`: production Cert ID; server-only, never committed.
+- `EBAY_DELETION_ENDPOINT`: `https://www.flipbot.me/api/ebay/account-deletion`.
+- `EBAY_DELETION_VERIFICATION_TOKEN`: independent random 32-80 character token,
   letters, digits, underscore and hyphen; not the Client Secret.
-- Existing `FLIPBOT_RUNTIME_URL` and `FLIPBOT_RUNTIME_KEY` gateway settings.
-- `EBAY_DELETION_PROCESSOR_READY=true`: only after the real processor is verified.
+- Existing `FLIPBOT_RUNTIME_URL` and `FLIPBOT_RUNTIME_KEY` settings.
+- `EBAY_DELETION_PROCESSOR_READY=true`: after deploying and verifying the processor.
 
-Use a branch/preview before production. Test the route directly, register the alert
-email/endpoint/token in eBay, send a test notification, and verify keyset activation.
-Do not claim an exemption merely because seller names are absent.
+Deploy with these settings, verify the exact canonical URL, then register the alert
+email, endpoint and token in eBay Marketplace Account Deletion settings. Send eBay's
+test notification and confirm delivery and keyset compliance. Do not select an
+exemption. This does not itself grant restricted sold-history API access.
 
-Protocol reference: https://developer.ebay.com/develop/guides/sell/marketplace-user-account-deletion
-Signature interoperability reference: https://github.com/eBay/event-notification-nodejs-sdk/blob/main/lib/validator.js
+## Validation
 
-Run: `node --experimental-strip-types --test test/ebay-deletion.test.mjs`.
+Run `node --experimental-strip-types --test test/ebay-deletion.test.mjs` and
+`node node_modules/typescript/bin/tsc --noEmit`.
+Rolled-back database fixtures verified deletion, dependent removal, isolation of
+another seller, duplicate handling and rejection of re-import. Live signed delivery
+from eBay remains a deployment verification step.
+
+Protocol: https://developer.ebay.com/develop/guides/sell/marketplace-user-account-deletion
+Signature reference: https://github.com/eBay/event-notification-nodejs-sdk/blob/main/lib/validator.js

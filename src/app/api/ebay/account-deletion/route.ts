@@ -19,9 +19,10 @@ export async function POST(request: Request) {
       const endpoint = process.env.FLIPBOT_RUNTIME_URL;
       const key = process.env.FLIPBOT_RUNTIME_KEY;
       if (!endpoint || !key) throw new Error("Runtime unavailable");
-      // This new operation MUST be implemented and audited in the database gateway
-      // before enabling the readiness flag. Current gateway rejects unknown actions.
-      const response = await fetch(endpoint, {
+      const privacyEndpoint = new URL(endpoint);
+      privacyEndpoint.pathname = privacyEndpoint.pathname.replace(/\/flipbot-runtime\/?$/, "/flipbot-ebay-privacy");
+      if (!privacyEndpoint.pathname.endsWith("/flipbot-ebay-privacy")) throw new Error("Invalid runtime URL");
+      const response = await fetch(privacyEndpoint, {
         method: "POST", cache: "no-store", signal: AbortSignal.timeout(15000),
         headers: { "Content-Type": "application/json", "x-flipbot-internal-key": key },
         body: JSON.stringify({ action: "process_ebay_deletion", payload: notice }),
