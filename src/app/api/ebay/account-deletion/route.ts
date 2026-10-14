@@ -18,17 +18,20 @@ export async function POST(request: Request) {
     process: async (notice) => {
       const endpoint = process.env.FLIPBOT_RUNTIME_URL;
       const key = process.env.FLIPBOT_RUNTIME_KEY;
-      if (!endpoint || !key) throw new Error("Runtime unavailable");
+      if (!endpoint || !key) { console.error("eBay deletion: gateway configuration missing"); throw new Error("Runtime unavailable"); }
       const privacyEndpoint = new URL(endpoint);
       privacyEndpoint.pathname = privacyEndpoint.pathname.replace(/\/flipbot-runtime\/?$/, "/flipbot-ebay-privacy");
-      if (!privacyEndpoint.pathname.endsWith("/flipbot-ebay-privacy")) throw new Error("Invalid runtime URL");
+      if (!privacyEndpoint.pathname.endsWith("/flipbot-ebay-privacy")) { console.error("eBay deletion: gateway URL path incompatible"); throw new Error("Invalid runtime URL"); }
       const response = await fetch(privacyEndpoint, {
         method: "POST", cache: "no-store", signal: AbortSignal.timeout(15000),
         headers: { "Content-Type": "application/json", "x-flipbot-internal-key": key },
         body: JSON.stringify({ action: "process_ebay_deletion", payload: notice }),
       });
       const result = await response.json();
-      if (!response.ok || result.deleted !== true) throw new Error("Deletion not completed");
+      if (!response.ok || result.deleted !== true) {
+        console.error("eBay deletion: gateway did not confirm completion", response.status);
+        throw new Error("Deletion not completed");
+      }
     },
   });
 }

@@ -69,7 +69,7 @@ export async function receive(request: Request, dependencies: Dependencies): Pro
   }
   let key: string;
   try { key = await dependencies.publicKey(signature.kid); }
-  catch { return json({ error: "Verification unavailable" }, 503); }
+  catch { console.error("eBay deletion: public-key lookup unavailable"); return json({ error: "Verification unavailable" }, 503); }
   try {
     // eBay's reference SDK signs JSON.stringify(message) using ECDSA/SHA-1.
     // The digest is protocol-defined, never selected from untrusted header data.
@@ -95,7 +95,7 @@ export async function receive(request: Request, dependencies: Dependencies): Pro
   try {
     await dependencies.process({ notificationId: notification.notificationId, eventDate: notification.eventDate,
       userId: data.userId, username: data.username as string | undefined, eiasToken: data.eiasToken as string | undefined });
-  } catch { return json({ error: "Deletion processing unavailable" }, 503); }
+  } catch { console.error("eBay deletion: private processor unavailable"); return json({ error: "Deletion processing unavailable" }, 503); }
   // Acknowledge only after the real processor reports success.
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
